@@ -122,7 +122,3 @@ CREATE TABLE project_materials (
     FOREIGN KEY (project_id) REFERENCES projects(id),
     FOREIGN KEY (material_id) REFERENCES materials(id)
 );
-SELECT * FROM roles;
-SELECT * FROM difficulty_levels;
-SELECT * FROM collection_statuses;
-SHOW TABLES;
