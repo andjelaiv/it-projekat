@@ -149,5 +149,36 @@ router.post("/projects", authenticateToken, (req, res) => {
     );
   });
 });
+// SVI PROJEKTI
+router.get("/projects", (req, res) => {
+  const sql = `
+    SELECT
+      p.id,
+      p.title,
+      p.description,
+      p.estimated_time,
+      p.cover_image,
+      p.is_featured,
+      p.created_at,
+      u.username AS author,
+      c.name AS category,
+      d.name AS difficulty
+    FROM projects p
+    JOIN users u ON p.author_id = u.id
+    JOIN categories c ON p.category_id = c.id
+    JOIN difficulty_levels d ON p.difficulty_id = d.id
+    ORDER BY p.created_at DESC
+  `;
 
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Greška pri učitavanju projekata.",
+        error: err,
+      });
+    }
+
+    res.json(results);
+  });
+});
 module.exports = router;
