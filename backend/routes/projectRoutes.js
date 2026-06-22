@@ -161,10 +161,12 @@ router.post("/projects", authenticateToken, (req, res) => {
     );
   });
 });
-// SVI PROJEKTI
+// SVI PROJEKTI + PRETRAGA + FILTERI + SORTIRANJE
 router.get("/projects", (req, res) => {
-  const sql = `
-    SELECT
+  const { search, category, difficulty, tag, material, rating, sort } = req.query;
+
+  let sql = `
+    SELECT DISTINCT
       p.id,
       p.title,
       p.description,
@@ -174,15 +176,66 @@ router.get("/projects", (req, res) => {
       p.created_at,
       u.username AS author,
       c.name AS category,
-      d.name AS difficulty
+      d.name AS difficulty,
+      COALESCE(AVG(r.rating), 0) AS average_rating,
+      COUNT(DISTINCT r.id) AS review_count
     FROM projects p
     JOIN users u ON p.author_id = u.id
     JOIN categories c ON p.category_id = c.id
     JOIN difficulty_levels d ON p.difficulty_id = d.id
-    ORDER BY p.created_at DESC
+    LEFT JOIN reviews r ON p.id = r.project_id
+    LEFT JOIN project_tags pt ON p.id = pt.project_id
+    LEFT JOIN project_materials pm ON p.id = pm.project_id
+    WHERE 1 = 1
   `;
 
-  db.query(sql, (err, results) => {
+  const params = [];
+
+  if (search) {
+    sql += " AND p.title LIKE ?";
+    params.push(`%${search}%`);
+  }
+
+  if (category) {
+    sql += " AND p.category_id = ?";
+    params.push(category);
+  }
+
+  if (difficulty) {
+    sql += " AND p.difficulty_id = ?";
+    params.push(difficulty);
+  }
+
+  if (tag) {
+    sql += " AND pt.tag_id = ?";
+    params.push(tag);
+  }
+
+  if (material) {
+    sql += " AND pm.material_id = ?";
+    params.push(material);
+  }
+
+  sql += `
+    GROUP BY 
+      p.id, p.title, p.description, p.estimated_time, p.cover_image,
+      p.is_featured, p.created_at, u.username, c.name, d.name
+  `;
+
+  if (rating) {
+    sql += " HAVING average_rating >= ?";
+    params.push(rating);
+  }
+
+  if (sort === "rating") {
+    sql += " ORDER BY average_rating DESC";
+  } else if (sort === "popular") {
+    sql += " ORDER BY review_count DESC";
+  } else {
+    sql += " ORDER BY p.created_at DESC";
+  }
+
+  db.query(sql, params, (err, results) => {
     if (err) {
       return res.status(500).json({
         message: "Greška pri učitavanju projekata.",
@@ -668,4 +721,47 @@ router.post(
     });
   }
 );
+// SLIČNI PROJEKTI
+router.get("/projects/:id/similar", (req, res) => {
+  const projectId = req.params.id;
+
+  const sql = `
+    SELECT DISTINCT
+      p.id,
+      p.title,
+      p.description,
+      p.estimated_time,
+      p.cover_image,
+      p.is_featured,
+      p.created_at,
+      u.username AS author,
+      c.name AS category,
+      d.name AS difficulty
+    FROM projects p
+    JOIN users u ON p.author_id = u.id
+    JOIN categories c ON p.category_id = c.id
+    JOIN difficulty_levels d ON p.difficulty_id = d.id
+    LEFT JOIN project_tags pt ON p.id = pt.project_id
+    WHERE p.id != ?
+      AND (
+        p.category_id = (SELECT category_id FROM projects WHERE id = ?)
+        OR pt.tag_id IN (
+          SELECT tag_id FROM project_tags WHERE project_id = ?
+        )
+      )
+    ORDER BY p.created_at DESC
+    LIMIT 4
+  `;
+
+  db.query(sql, [projectId, projectId, projectId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Greška pri učitavanju sličnih projekata.",
+        error: err,
+      });
+    }
+
+    res.json(results);
+  });
+});
 module.exports = router;

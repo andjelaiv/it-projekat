@@ -6,14 +6,19 @@ require("./db");
 
 const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoutes");
-
+const reviewRoutes = require("./routes/reviewRoutes");
 const { authenticateToken, isAdmin } = require("./middleware/authMiddleware");
+const favoriteRoutes = require("./routes/favoriteRoutes");
+const collectionRoutes = require("./routes/collectionRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
+app.use("/api", reviewRoutes);
+app.use("/api", favoriteRoutes);
+app.use("/api", collectionRoutes);
 
 app.get("/api/test", (req, res) => {
   res.json({ message: "Backend radi!" });
