@@ -1,9 +1,21 @@
+const multer = require("multer");
+const path = require("path");
 const express = require("express");
 const db = require("../db");
 const { authenticateToken } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
 
+const upload = multer({ storage });
 router.get("/categories", (req, res) => {
   db.query("SELECT * FROM categories ORDER BY name", (err, results) => {
     if (err) return res.status(500).json({ message: "Greška.", error: err });
@@ -179,6 +191,71 @@ router.get("/projects", (req, res) => {
     }
 
     res.json(results);
+  });
+});
+// FEATURED PROJEKTI
+router.get("/projects/featured", (req, res) => {
+  const sql = `
+    SELECT
+      p.id,
+      p.title,
+      p.description,
+      p.estimated_time,
+      p.cover_image,
+      p.is_featured,
+      p.created_at,
+      u.username AS author,
+      c.name AS category,
+      d.name AS difficulty
+    FROM projects p
+    JOIN users u ON p.author_id = u.id
+    JOIN categories c ON p.category_id = c.id
+    JOIN difficulty_levels d ON p.difficulty_id = d.id
+    WHERE p.is_featured = true
+    ORDER BY p.created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Greška pri učitavanju featured projekata.",
+        error: err,
+      });
+    }
+
+    res.json(results);
+  });
+});
+// ADMIN - OZNAČAVANJE PROJEKTA KAO FEATURED
+router.put("/projects/:id/featured", authenticateToken, (req, res) => {
+  const projectId = req.params.id;
+  const { is_featured } = req.body;
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "Samo admin može označiti projekat kao featured.",
+    });
+  }
+
+  const sql = "UPDATE projects SET is_featured = ? WHERE id = ?";
+
+  db.query(sql, [is_featured, projectId], (err, result) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Greška pri ažuriranju featured statusa.",
+        error: err,
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Projekat nije pronađen.",
+      });
+    }
+
+    res.json({
+      message: "Featured status uspješno ažuriran.",
+    });
   });
 });
 // DETALJI JEDNOG PROJEKTA
@@ -517,4 +594,78 @@ router.delete("/projects/:id", authenticateToken, (req, res) => {
     });
   });
 });
+// UPLOAD COVER SLIKE
+router.post(
+  "/projects/:id/cover",
+  authenticateToken,
+  upload.single("cover"),
+  (req, res) => {
+    const projectId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Slika nije poslata." });
+    }
+
+    const imagePath = `/uploads/${req.file.filename}`;
+
+    const sql = "UPDATE projects SET cover_image = ? WHERE id = ?";
+
+    db.query(sql, [imagePath, projectId], (err) => {
+      if (err) {
+        return res.status(500).json({
+          message: "Greška pri čuvanju cover slike.",
+          error: err,
+        });
+      }
+
+      res.json({
+        message: "Cover slika uspješno uploadovana.",
+        cover_image: imagePath,
+      });
+    });
+  }
+);
+// UPLOAD DODATNIH SLIKA PROJEKTA
+router.post(
+  "/projects/:id/images",
+  authenticateToken,
+  upload.array("images", 10),
+  (req, res) => {
+    const projectId = req.params.id;
+    const { image_type } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "Nijedna slika nije poslata." });
+    }
+
+    if (!image_type) {
+      return res.status(400).json({ message: "Tip slike je obavezan." });
+    }
+
+    const values = req.files.map((file) => [
+      projectId,
+      `/uploads/${file.filename}`,
+      image_type,
+    ]);
+
+    const sql = `
+      INSERT INTO project_images (project_id, image_url, image_type)
+      VALUES ?
+    `;
+
+    db.query(sql, [values], (err) => {
+      if (err) {
+        return res.status(500).json({
+          message: "Greška pri čuvanju slika.",
+          error: err,
+        });
+      }
+
+      res.status(201).json({
+        message: "Slike uspješno uploadovane.",
+        images: values,
+      });
+    });
+  }
+);
 module.exports = router;
