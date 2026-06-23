@@ -116,12 +116,12 @@ function Header() {
           <SearchIcon />
         </Link>
 
-        <Link to="/favoriti" className="icon-link" aria-label="Favoriti">
+        <Link to="/prijava-potrebna" className="icon-link" aria-label="Favoriti">
           <HeartIcon />
         </Link>
 
         <Link
-          to="/moja-kolekcija"
+          to="/prijava-potrebna"
           className="icon-link"
           aria-label="Moja kolekcija"
         >
