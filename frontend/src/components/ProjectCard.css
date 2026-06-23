@@ -1,23 +1,51 @@
 .project-card {
-  background-color: #fffaf3;
-  border: 1px solid #e2d6c8;
+  background-color: var(--paper);
+  border: 3px solid var(--dark);
   border-radius: 28px;
   overflow: hidden;
-  color: #2b1711;
-  box-shadow: 0 8px 18px rgba(50, 28, 20, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--dark);
+  box-shadow: 8px 8px 0 var(--dark);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+}
+
+.project-card:nth-child(4n + 1) {
+  background-color: #fff9ea;
+}
+
+.project-card:nth-child(4n + 2) {
+  background-color: #ffdce6;
+}
+
+.project-card:nth-child(4n + 3) {
+  background-color: #dcecff;
+}
+
+.project-card:nth-child(4n + 4) {
+  background-color: #f8e7a6;
 }
 
 .project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(50, 28, 20, 0.1);
+  transform: translateY(-6px) rotate(-1deg);
+  box-shadow: 12px 12px 0 var(--dark);
+}
+
+.project-card::after {
+  content: "✿";
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  color: rgba(38, 18, 13, 0.12);
+  font-size: 40px;
+  pointer-events: none;
 }
 
 .project-image-wrapper {
-  height: 230px;
+  height: 245px;
   position: relative;
-  background-color: #f3eadf;
+  background-color: var(--paper);
   overflow: hidden;
+  border-bottom: 3px solid var(--dark);
 }
 
 .project-image {
@@ -32,8 +60,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8a7065;
-  font-family: Arial, sans-serif;
+  color: var(--brown);
+  font-family: var(--body-font);
 }
 
 .featured-badge {
@@ -41,13 +69,15 @@
   top: 14px;
   left: 14px;
   z-index: 2;
-  background-color: #bd533b;
-  color: #fff8ee;
+  background-color: var(--coral);
+  color: white;
   padding: 8px 12px;
   border-radius: 999px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  font-family: var(--body-font);
+  border: 3px solid var(--dark);
+  box-shadow: 4px 4px 0 var(--dark);
 }
 
 .favorite-card-button {
@@ -55,61 +85,95 @@
   top: 14px;
   right: 14px;
   z-index: 2;
-  width: 46px;
-  height: 46px;
-  border: none;
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--dark);
   border-radius: 50%;
-  background-color: rgba(255, 250, 243, 0.92);
-  color: #2b1711;
+  background-color: var(--paper);
+  color: var(--dark);
   font-size: 25px;
   cursor: pointer;
+  transition: 0.18s ease;
+  box-shadow: 4px 4px 0 var(--dark);
+}
+
+.favorite-card-button:hover {
+  transform: scale(1.07) rotate(8deg);
+  background-color: var(--blush);
+  color: white;
 }
 
 .project-card-content {
-  padding: 18px 20px 22px;
+  padding: 20px 21px 24px;
+  position: relative;
+  z-index: 1;
 }
 
 .project-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  color: #5a4037;
-  font-family: Arial, sans-serif;
-  font-size: 16px;
-  margin-bottom: 8px;
+  color: var(--brown);
+  font-family: var(--body-font);
+  font-size: 15px;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .category-pill {
-  background-color: #d9e4cf;
-  color: #4e5c42;
-  padding: 5px 12px;
+  background-color: var(--matcha);
+  color: white;
+  padding: 6px 13px;
   border-radius: 999px;
+  font-weight: 900;
+  border: 2px solid var(--dark);
+}
+
+.project-card:nth-child(4n + 2) .category-pill {
+  background-color: var(--blush);
+}
+
+.project-card:nth-child(4n + 3) .category-pill {
+  background-color: var(--sea);
+}
+
+.project-card:nth-child(4n + 4) .category-pill {
+  background-color: var(--tangerine);
 }
 
 .project-card h3 {
-  margin: 0 0 10px;
-  font-size: 26px;
-  line-height: 1.1;
+  margin: 0 0 11px;
+  font-size: 28px;
+  line-height: 1.02;
+  color: var(--dark);
 }
 
 .project-author {
-  margin: 0 0 6px;
-  color: #5a4037;
-  font-family: Arial, sans-serif;
-  font-size: 16px;
+  margin: 0 0 8px;
+  color: var(--brown);
+  font-family: var(--body-font);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .project-rating {
+  width: fit-content;
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #b95039;
-  font-family: Arial, sans-serif;
-  font-size: 17px;
+  color: white;
+  background-color: var(--coral);
+  border: 2px solid var(--dark);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-family: var(--body-font);
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .review-count {
-  color: #8a7065;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 @media (max-width: 650px) {
@@ -118,7 +182,7 @@
   }
 
   .project-card h3 {
-    font-size: 22px;
+    font-size: 23px;
   }
 
   .project-card-content {

@@ -1,12 +1,69 @@
+:root {
+  --tangerine: #f08c21;
+  --butter: #f2d88f;
+  --blush: #e36888;
+  --sea: #6698cc;
+  --matcha: #b4b534;
+
+  --cream: #fff4da;
+  --paper: #fff9ea;
+  --white-paper: #fffdf4;
+  --dark: #26120d;
+  --brown: #633427;
+  --coral: #d9543f;
+  --red: #c94032;
+
+  --border-dark: rgba(38, 18, 13, 0.18);
+  --shadow-dark: rgba(38, 18, 13, 0.16);
+
+  --title-font: "Fraunces", Georgia, serif;
+  --body-font: "Poppins", Arial, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  background-color: #f7efe4;
-  color: #2b1711;
-  font-family: Georgia, "Times New Roman", serif;
+  color: var(--dark);
+  font-family: var(--body-font);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(227, 104, 136, 0.45), transparent 22%),
+    radial-gradient(circle at 88% 8%, rgba(240, 140, 33, 0.42), transparent 20%),
+    radial-gradient(circle at 14% 88%, rgba(102, 152, 204, 0.38), transparent 24%),
+    linear-gradient(135deg, var(--cream) 0%, #ffe5ee 46%, #fff4da 100%);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(38, 18, 13, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(38, 18, 13, 0.045) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: 0.8;
+}
+
+body::after {
+  content: "✿  ✦  ✿  ✷  ✿  ✦  ✿";
+  position: fixed;
+  left: -40px;
+  bottom: 30px;
+  z-index: -1;
+  color: rgba(227, 104, 136, 0.45);
+  font-size: 42px;
+  letter-spacing: 16px;
+  transform: rotate(-14deg);
+  pointer-events: none;
 }
 
 a {
@@ -21,11 +78,29 @@ textarea {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 main {
   width: 100%;
 }
 
-h1 {
-  margin: 60px 28px;
-  font-size: 48px;
+h1,
+h2,
+h3 {
+  margin-top: 0;
+  color: var(--dark);
+  font-family: var(--title-font);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+p {
+  font-family: var(--body-font);
+}
+
+::selection {
+  background-color: var(--blush);
+  color: white;
 }
