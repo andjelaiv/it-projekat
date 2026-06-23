@@ -1,0 +1,147 @@
+.home-page {
+  min-height: calc(100vh - 88px);
+  padding: 64px 32px 80px;
+  background-color: #f7efe4;
+}
+
+.hero {
+  max-width: 760px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #d9e4cf;
+  color: #2b1711;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 18px;
+  margin-bottom: 28px;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -2px;
+  color: #2b1711;
+}
+
+.hero-title span {
+  color: #b95039;
+  font-style: italic;
+}
+
+.hero-text {
+  max-width: 650px;
+  margin: 32px 0 0;
+  font-size: 26px;
+  line-height: 1.45;
+  color: #5a4037;
+  font-family: Arial, sans-serif;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 36px;
+}
+
+.primary-button,
+.secondary-button {
+  border-radius: 999px;
+  padding: 18px 28px;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.primary-button {
+  background-color: #bd533b;
+  color: #fff8ee;
+}
+
+.secondary-button {
+  background-color: transparent;
+  color: #2b1711;
+  border: 2px solid #ded2c4;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 42px;
+  margin-top: 44px;
+}
+
+.hero-stats div {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-stats strong {
+  font-size: 30px;
+  color: #130806;
+}
+
+.hero-stats span {
+  font-size: 18px;
+  color: #5a4037;
+  font-family: Arial, sans-serif;
+}
+
+.hero-image-card {
+  margin-top: 48px;
+  border-radius: 56px 56px 28px 28px;
+  overflow: hidden;
+  border: 24px solid #f8dcd5;
+  max-width: 1120px;
+  height: 320px;
+}
+
+.hero-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Telefon */
+@media (max-width: 650px) {
+  .home-page {
+    min-height: calc(100vh - 76px);
+    padding: 58px 20px 64px;
+  }
+
+  .hero-badge {
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+
+  .hero-text {
+    font-size: 23px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    font-size: 19px;
+    padding: 16px 24px;
+  }
+
+  .hero-stats {
+    gap: 28px;
+  }
+
+  .hero-stats strong {
+    font-size: 25px;
+  }
+
+  .hero-image-card {
+    height: 230px;
+    border-width: 16px;
+    border-radius: 42px 42px 24px 24px;
+  }
+}
