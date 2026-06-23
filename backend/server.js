@@ -11,6 +11,7 @@ const favoriteRoutes = require("./routes/favoriteRoutes");
 const collectionRoutes = require("./routes/collectionRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
+const statsRoutes = require("./routes/statsRoutes");
 
 const { authenticateToken, isAdmin } = require("./middleware/authMiddleware");
 
@@ -44,6 +45,7 @@ app.use("/api", favoriteRoutes);
 app.use("/api", collectionRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", userRoutes);
+app.use("/api", statsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
