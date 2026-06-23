@@ -315,25 +315,26 @@ router.put("/projects/:id/featured", authenticateToken, (req, res) => {
 router.get("/projects/:id", (req, res) => {
   const projectId = req.params.id;
 
-  const projectSql = `
-    SELECT
-      p.id,
-      p.title,
-      p.description,
-      p.estimated_time,
-      p.pattern_text,
-      p.cover_image,
-      p.is_featured,
-      p.created_at,
-      u.username AS author,
-      c.name AS category,
-      d.name AS difficulty
+    const projectSql = `
+      SELECT
+        p.id,
+        p.title,
+        p.description,
+        p.estimated_time,
+        p.pattern_text,
+        p.cover_image,
+        p.is_featured,
+        p.created_at,
+        u.id AS author_id,
+        u.username AS author,
+        c.name AS category,
+        d.name AS difficulty
     FROM projects p
-    JOIN users u ON p.author_id = u.id
-    JOIN categories c ON p.category_id = c.id
-    JOIN difficulty_levels d ON p.difficulty_id = d.id
-    WHERE p.id = ?
-  `;
+      JOIN users u ON p.author_id = u.id
+      JOIN categories c ON p.category_id = c.id
+      JOIN difficulty_levels d ON p.difficulty_id = d.id
+      WHERE p.id = ?
+    `;
 
   db.query(projectSql, [projectId], (err, projectResults) => {
     if (err) {
