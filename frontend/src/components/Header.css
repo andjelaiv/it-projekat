@@ -25,57 +25,49 @@
 }
 
 .logo-circle {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border: 2px solid #e2a18e;
   border-radius: 50%;
   background-color: #f9eadf;
-  display: inline-block;
-}
-
-.main-nav {
-  display: flex;
+  color: #b95039;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
 }
 
-.main-nav a {
-  color: #37211a;
-  font-size: 18px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  transition: 0.2s ease;
-}
-
-.main-nav a:hover,
-.main-nav a.active {
-  background-color: #bd533b;
-  color: #fffaf2;
+.home-logo-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 18px;
+  justify-content: flex-end;
+  gap: 22px;
+  margin-left: auto;
 }
 
 .icon-link {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   color: #2b1711;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: 0.2s ease;
+}
+
+.icon-link:hover {
+  background-color: #f1e5d8;
+  color: #b95039;
 }
 
 .header-icon {
   width: 24px;
   height: 24px;
-}
-
-.login-icon {
-  width: 20px;
-  height: 20px;
 }
 
 .login-button {
@@ -85,10 +77,16 @@
   border-radius: 999px;
   font-size: 18px;
   font-weight: 700;
+  font-family: Arial, sans-serif;
   display: flex;
   align-items: center;
   gap: 9px;
   white-space: nowrap;
+}
+
+.login-icon {
+  width: 20px;
+  height: 20px;
 }
 
 /* Tablet */
@@ -102,17 +100,8 @@
     font-size: 28px;
   }
 
-  .main-nav {
-    gap: 6px;
-  }
-
-  .main-nav a {
-    font-size: 16px;
-    padding: 10px 12px;
-  }
-
   .header-actions {
-    gap: 12px;
+    gap: 14px;
   }
 
   .login-button {
@@ -129,25 +118,55 @@
   }
 
   .logo {
-    font-size: 28px;
+    font-size: 27px;
+    gap: 10px;
   }
 
   .logo-circle {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
 
-  .main-nav {
-    display: none;
+  .home-logo-icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  .header-actions {
+    gap: 9px;
+  }
+
+  .icon-link {
+    width: 30px;
+    height: 30px;
   }
 
   .header-icon {
-    width: 23px;
-    height: 23px;
+    width: 22px;
+    height: 22px;
   }
 
   .login-button {
-    padding: 10px 16px;
-    font-size: 16px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .login-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 430px) {
+  .logo span:last-child {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 7px;
+  }
+
+  .login-button {
+    padding: 9px 12px;
   }
 }

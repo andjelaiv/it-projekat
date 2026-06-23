@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
 import "./Projects.css";
 
 function Projects() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [projects, setProjects] = useState([]);
 
   const [categories, setCategories] = useState([]);
@@ -12,29 +15,45 @@ function Projects() {
   const [tags, setTags] = useState([]);
 
   const [filters, setFilters] = useState({
-    search: "",
-    category: "",
-    difficulty: "",
-    material: "",
-    tag: "",
-    rating: "",
-    sort: "newest",
+    search: searchParams.get("search") || "",
+    category: searchParams.get("category") || "",
+    difficulty: searchParams.get("difficulty") || "",
+    material: searchParams.get("material") || "",
+    tag: searchParams.get("tag") || "",
+    rating: searchParams.get("rating") || "",
+    sort: searchParams.get("sort") || "newest",
   });
 
   const [loading, setLoading] = useState(false);
 
-  const fetchProjects = () => {
+  const updateUrlParams = (nextFilters) => {
+    const params = {};
+
+    if (nextFilters.search) params.search = nextFilters.search;
+    if (nextFilters.category) params.category = nextFilters.category;
+    if (nextFilters.difficulty) params.difficulty = nextFilters.difficulty;
+    if (nextFilters.material) params.material = nextFilters.material;
+    if (nextFilters.tag) params.tag = nextFilters.tag;
+    if (nextFilters.rating) params.rating = nextFilters.rating;
+    if (nextFilters.sort && nextFilters.sort !== "newest") {
+      params.sort = nextFilters.sort;
+    }
+
+    setSearchParams(params);
+  };
+
+  const fetchProjects = (currentFilters = filters) => {
     setLoading(true);
 
     const params = {};
 
-    if (filters.search) params.search = filters.search;
-    if (filters.category) params.category = filters.category;
-    if (filters.difficulty) params.difficulty = filters.difficulty;
-    if (filters.material) params.material = filters.material;
-    if (filters.tag) params.tag = filters.tag;
-    if (filters.rating) params.rating = filters.rating;
-    if (filters.sort) params.sort = filters.sort;
+    if (currentFilters.search) params.search = currentFilters.search;
+    if (currentFilters.category) params.category = currentFilters.category;
+    if (currentFilters.difficulty) params.difficulty = currentFilters.difficulty;
+    if (currentFilters.material) params.material = currentFilters.material;
+    if (currentFilters.tag) params.tag = currentFilters.tag;
+    if (currentFilters.rating) params.rating = currentFilters.rating;
+    if (currentFilters.sort) params.sort = currentFilters.sort;
 
     axios
       .get("http://localhost:5000/api/projects", { params })
@@ -53,7 +72,9 @@ function Projects() {
     axios
       .get("http://localhost:5000/api/categories")
       .then((response) => setCategories(response.data))
-      .catch((error) => console.error("Greška pri učitavanju kategorija:", error));
+      .catch((error) =>
+        console.error("Greška pri učitavanju kategorija:", error)
+      );
 
     axios
       .get("http://localhost:5000/api/difficulty-levels")
@@ -65,7 +86,9 @@ function Projects() {
     axios
       .get("http://localhost:5000/api/materials")
       .then((response) => setMaterials(response.data))
-      .catch((error) => console.error("Greška pri učitavanju materijala:", error));
+      .catch((error) =>
+        console.error("Greška pri učitavanju materijala:", error)
+      );
 
     axios
       .get("http://localhost:5000/api/tags")
@@ -74,7 +97,7 @@ function Projects() {
   }, []);
 
   useEffect(() => {
-    fetchProjects();
+    fetchProjects(filters);
   }, [
     filters.category,
     filters.difficulty,
@@ -87,19 +110,26 @@ function Projects() {
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFilters((previousFilters) => ({
-      ...previousFilters,
+    const nextFilters = {
+      ...filters,
       [name]: value,
-    }));
+    };
+
+    setFilters(nextFilters);
+
+    if (name !== "search") {
+      updateUrlParams(nextFilters);
+    }
   };
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    fetchProjects();
+    updateUrlParams(filters);
+    fetchProjects(filters);
   };
 
   const clearFilters = () => {
-    setFilters({
+    const emptyFilters = {
       search: "",
       category: "",
       difficulty: "",
@@ -107,7 +137,11 @@ function Projects() {
       tag: "",
       rating: "",
       sort: "newest",
-    });
+    };
+
+    setFilters(emptyFilters);
+    setSearchParams({});
+    fetchProjects(emptyFilters);
   };
 
   return (

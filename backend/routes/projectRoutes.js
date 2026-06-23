@@ -327,9 +327,13 @@ router.get("/projects/:id", (req, res) => {
         p.created_at,
         u.id AS author_id,
         u.username AS author,
+        c.id AS category_id,
         c.name AS category,
-        d.name AS difficulty
-    FROM projects p
+        d.id AS difficulty_id,
+        d.name AS difficulty,
+        COALESCE((SELECT AVG(r.rating) FROM reviews r WHERE r.project_id = p.id), 0) AS average_rating,
+        (SELECT COUNT(*) FROM reviews r WHERE r.project_id = p.id) AS review_count
+      FROM projects p
       JOIN users u ON p.author_id = u.id
       JOIN categories c ON p.category_id = c.id
       JOIN difficulty_levels d ON p.difficulty_id = d.id

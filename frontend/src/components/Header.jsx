@@ -1,5 +1,23 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Header.css";
+
+function HomeIcon() {
+  return (
+    <svg
+      className="home-logo-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 10v10h14V10" />
+      <path d="M9 20v-6h6v6" />
+    </svg>
+  );
+}
 
 function SearchIcon() {
   return (
@@ -34,6 +52,38 @@ function HeartIcon() {
   );
 }
 
+function BookmarkIcon() {
+  return (
+    <svg
+      className="header-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 4h12a1 1 0 0 1 1 1v16l-7-4-7 4V5a1 1 0 0 1 1-1z" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg
+      className="header-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
 function UserIcon() {
   return (
     <svg
@@ -54,37 +104,12 @@ function UserIcon() {
 function Header() {
   return (
     <header className="site-header">
-      <Link to="/" className="logo">
-        <span className="logo-circle"></span>
+      <Link to="/" className="logo" aria-label="Početna">
+        <span className="logo-circle">
+          <HomeIcon />
+        </span>
         <span>Kloopko</span>
       </Link>
-
-      <nav className="main-nav">
-        <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
-          Početna
-        </NavLink>
-
-        <NavLink
-          to="/projekti"
-          className={({ isActive }) => (isActive ? "active" : "")}
-        >
-          Projekti
-        </NavLink>
-
-        <NavLink
-          to="/moja-kolekcija"
-          className={({ isActive }) => (isActive ? "active" : "")}
-        >
-          Moja kolekcija
-        </NavLink>
-
-        <NavLink
-          to="/admin"
-          className={({ isActive }) => (isActive ? "active" : "")}
-        >
-          Admin
-        </NavLink>
-      </nav>
 
       <div className="header-actions">
         <Link to="/projekti" className="icon-link" aria-label="Pretraga">
@@ -93,6 +118,18 @@ function Header() {
 
         <Link to="/favoriti" className="icon-link" aria-label="Favoriti">
           <HeartIcon />
+        </Link>
+
+        <Link
+          to="/moja-kolekcija"
+          className="icon-link"
+          aria-label="Moja kolekcija"
+        >
+          <BookmarkIcon />
+        </Link>
+
+        <Link to="/admin" className="icon-link" aria-label="Admin panel">
+          <ShieldIcon />
         </Link>
 
         <Link to="/prijava" className="login-button">

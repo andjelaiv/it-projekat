@@ -67,6 +67,20 @@ function ProjectDetails() {
   const tags = project.tags || [];
   const materials = project.materials || [];
 
+  const calculatedAverage =
+  reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) /
+      reviews.length
+    : 0;
+
+const displayRating =
+  Number(project.average_rating) > 0
+    ? Number(project.average_rating)
+    : calculatedAverage;
+
+const displayReviewCount =
+  Number(project.review_count) > 0 ? Number(project.review_count) : reviews.length;
+
   return (
     <section className="project-details-page">
       <Link to="/projekti" className="back-link">
@@ -88,8 +102,19 @@ function ProjectDetails() {
 
         <div className="details-info-card">
           <div className="details-meta-row">
-            <span className="details-pill">{project.category}</span>
-            <span>{project.difficulty}</span>
+            <Link
+              to={`/projekti?category=${project.category_id}`}
+              className="details-pill"
+            >
+              {project.category}
+            </Link>
+
+            <Link
+              to={`/projekti?difficulty=${project.difficulty_id}`}
+              className="details-filter-link"
+            >
+              {project.difficulty}
+            </Link>
           </div>
 
           <h1>{project.title}</h1>
@@ -106,7 +131,13 @@ function ProjectDetails() {
           <div className="details-rating">
             <span>★</span>
             <strong>{formatRating(project.average_rating)}</strong>
-            <span>({project.review_count || reviews.length} recenzija)</span>
+            <span>
+              ({project.review_count || reviews.length}{" "}
+              {(project.review_count || reviews.length) === 1
+                ? "recenzija"
+                : "recenzije"}
+              )
+            </span>
           </div>
 
           <p className="details-description">{project.description}</p>
@@ -139,7 +170,12 @@ function ProjectDetails() {
           {materials.length > 0 ? (
             <div className="chip-list">
               {materials.map((material) => (
-                <span key={material.id || material.name}>{material.name}</span>
+                <Link
+                  key={material.id || material.name}
+                  to={`/projekti?material=${material.id}`}
+                >
+                  {material.name}
+                </Link>
               ))}
             </div>
           ) : (
@@ -153,7 +189,9 @@ function ProjectDetails() {
           {tags.length > 0 ? (
             <div className="chip-list">
               {tags.map((tag) => (
-                <span key={tag.id || tag.name}>{tag.name}</span>
+                <Link key={tag.id || tag.name} to={`/projekti?tag=${tag.id}`}>
+                  {tag.name}
+                </Link>
               ))}
             </div>
           ) : (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
 import "./Home.css";
@@ -19,7 +19,26 @@ function formatStatNumber(number) {
   return `${rounded}+`;
 }
 
+function SearchIcon() {
+  return (
+    <svg
+      className="home-search-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
 function Home() {
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     projects_count: 0,
     users_count: 0,
@@ -27,6 +46,11 @@ function Home() {
   });
 
   const [featuredProjects, setFeaturedProjects] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     axios
@@ -46,7 +70,62 @@ function Home() {
       .catch((error) => {
         console.error("Greška pri učitavanju izdvojenih projekata:", error);
       });
+
+    axios
+      .get("http://localhost:5000/api/categories")
+      .then((response) => {
+        setCategories(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju kategorija:", error);
+      });
   }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      axios
+        .get("http://localhost:5000/api/projects", {
+          params: {
+            search: searchTerm,
+          },
+        })
+        .then((response) => {
+          setSuggestions(response.data.slice(0, 5));
+          setShowSuggestions(true);
+        })
+        .catch((error) => {
+          console.error("Greška pri pretrazi projekata:", error);
+        });
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+
+    const trimmedSearch = searchTerm.trim();
+
+    if (!trimmedSearch) {
+      navigate("/projekti");
+      return;
+    }
+
+    navigate(`/projekti?search=${encodeURIComponent(trimmedSearch)}`);
+  };
+
+  const handleSuggestionClick = (projectId) => {
+    setSearchTerm("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+    navigate(`/projekti/${projectId}`);
+  };
 
   return (
     <section className="home-page">
@@ -99,6 +178,67 @@ function Home() {
         />
       </div>
 
+      <section className="home-search-section">
+        <form className="home-search-bar" onSubmit={handleSearchSubmit}>
+          <SearchIcon />
+
+          <input
+            type="text"
+            placeholder="Pretraži po imenu projekta..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onFocus={() => {
+              if (suggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
+          />
+
+          <button type="submit">Napredna pretraga →</button>
+
+          {showSuggestions && (
+            <div className="search-suggestions">
+              {suggestions.length > 0 ? (
+                suggestions.map((project) => (
+                  <button
+                    type="button"
+                    key={project.id}
+                    className="suggestion-item"
+                    onMouseDown={() => handleSuggestionClick(project.id)}
+                  >
+                    {project.cover_image ? (
+                      <img
+                        src={`http://localhost:5000${project.cover_image}`}
+                        alt={project.title}
+                      />
+                    ) : (
+                      <span className="suggestion-placeholder"></span>
+                    )}
+
+                    <span>
+                      <strong>{project.title}</strong>
+                      <small>
+                        {project.category} · {project.difficulty}
+                      </small>
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p className="suggestion-empty">Nema pronađenih projekata.</p>
+              )}
+            </div>
+          )}
+        </form>
+
+        <div className="home-category-pills">
+          {categories.slice(0, 5).map((category) => (
+            <Link key={category.id} to={`/projekti?category=${category.id}`}>
+              {category.name}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="home-section">
         <div className="section-heading">
           <div>
@@ -107,7 +247,7 @@ function Home() {
           </div>
 
           <Link to="/projekti" className="view-all-link">
-            Pogledaj sve
+            Svi projekti →
           </Link>
         </div>
 
