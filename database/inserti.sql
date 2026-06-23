@@ -47,3 +47,9 @@ INSERT INTO tags (name) VALUES
 ('wearable'),
 ('small project'),
 ('large project');
+
+SELECT * FROM projects;
+SELECT * FROM project_tags;
+SELECT * FROM project_materials;
+UPDATE users SET role_id = 1 WHERE id = 1;
+SELECT * FROM reviews;
