@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import ProjectCard from "../components/ProjectCard";
 import "./Home.css";
 
 function formatStatNumber(number) {
@@ -25,6 +26,8 @@ function Home() {
     reviews_count: 0,
   });
 
+  const [featuredProjects, setFeaturedProjects] = useState([]);
+
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/stats/home")
@@ -33,6 +36,15 @@ function Home() {
       })
       .catch((error) => {
         console.error("Greška pri učitavanju statistike:", error);
+      });
+
+    axios
+      .get("http://localhost:5000/api/projects/featured")
+      .then((response) => {
+        setFeaturedProjects(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju izdvojenih projekata:", error);
       });
   }, []);
 
@@ -82,10 +94,35 @@ function Home() {
 
       <div className="hero-image-card">
         <img
-          src="http://localhost:5000/uploads/bun.jfif"
+          src="http://localhost:5000/uploads/1782128316453-bun.jfif"
           alt="Heklani projekat"
         />
       </div>
+
+      <section className="home-section">
+        <div className="section-heading">
+          <div>
+            <h2>Izdvojeni projekti</h2>
+            <p>Birano od strane administratora.</p>
+          </div>
+
+          <Link to="/projekti" className="view-all-link">
+            Pogledaj sve
+          </Link>
+        </div>
+
+        {featuredProjects.length > 0 ? (
+          <div className="projects-grid">
+            {featuredProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-message">
+            Još uvijek nema izdvojenih projekata.
+          </div>
+        )}
+      </section>
     </section>
   );
 }
