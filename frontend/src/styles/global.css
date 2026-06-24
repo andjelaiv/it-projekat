@@ -104,3 +104,6 @@ p {
   background-color: var(--blush);
   color: white;
 }
+#root {
+  zoom: 0.9;
+}
