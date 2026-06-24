@@ -265,3 +265,118 @@
     font-size: 32px;
   }
 }
+.collection-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+}
+
+.collection-status-dropdown {
+  position: relative;
+}
+
+.collection-status-dropdown > button,
+.remove-collection-button {
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  padding: 12px 17px;
+  font-family: var(--body-font);
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 5px 5px 0 var(--dark);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.collection-status-dropdown > button {
+  background-color: var(--butter);
+  color: var(--dark);
+}
+
+.remove-collection-button {
+  background-color: var(--blush);
+  color: white;
+}
+
+.collection-status-dropdown > button:hover,
+.remove-collection-button:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.collection-status-menu {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 12px);
+  width: 220px;
+  transform: translateX(-50%);
+  background-color: var(--paper);
+  border: 3px solid var(--dark);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: 7px 7px 0 var(--dark);
+  display: grid;
+  gap: 8px;
+  z-index: 100;
+}
+
+.collection-status-menu button {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background-color: transparent;
+  color: var(--dark);
+  padding: 11px 12px;
+  font-family: var(--body-font);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.collection-status-menu button:hover {
+  background-color: var(--butter);
+  border-color: var(--dark);
+}
+
+.collection-status-menu span {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--dark);
+  border-radius: 50%;
+  background-color: var(--sea);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.collection-status-section,
+.collection-grid,
+.collection-item {
+  overflow: visible;
+}
+
+@media (max-width: 700px) {
+  .collection-item-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .collection-status-dropdown > button,
+  .remove-collection-button {
+    width: 100%;
+  }
+
+  .collection-status-menu {
+    left: 0;
+    transform: none;
+    width: 100%;
+  }
+}

@@ -6,16 +6,19 @@ import "./Collection.css";
 
 const statusGroups = [
   {
+    id: 1,
     key: "want_to_make",
     title: "Želim napraviti",
     emoji: "♡",
   },
   {
+    id: 2,
     key: "in_progress",
     title: "U izradi",
     emoji: "🧶",
   },
   {
+    id: 3,
     key: "finished",
     title: "Završeno",
     emoji: "✓",
@@ -39,6 +42,7 @@ function Collection() {
   const [collection, setCollection] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [openStatusMenu, setOpenStatusMenu] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -73,6 +77,14 @@ function Collection() {
   }, []);
 
   const handleRemoveFromCollection = (projectId) => {
+    const confirmRemove = window.confirm(
+      "Da li sigurno želiš da ukloniš ovaj projekat iz kolekcije?"
+    );
+
+    if (!confirmRemove) {
+      return;
+    }
+
     axios
       .delete(`http://localhost:5000/api/collection/${projectId}`, {
         headers: {
@@ -86,6 +98,30 @@ function Collection() {
       .catch((error) => {
         console.error("Greška pri uklanjanju iz kolekcije:", error);
         setMessage("Došlo je do greške pri uklanjanju iz kolekcije.");
+      });
+  };
+
+  const handleStatusChange = (projectId, statusId, statusTitle) => {
+    axios
+      .put(
+        `http://localhost:5000/api/collection/${projectId}`,
+        {
+          status_id: statusId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(() => {
+        setOpenStatusMenu(null);
+        setMessage(`Status je promijenjen u: ${statusTitle}.`);
+        fetchCollection();
+      })
+      .catch((error) => {
+        console.error("Greška pri promjeni statusa:", error);
+        setMessage("Došlo je do greške pri promjeni statusa.");
       });
   };
 
@@ -138,6 +174,7 @@ function Collection() {
               <section key={group.key} className="collection-status-section">
                 <div className="collection-status-heading">
                   <span>{group.emoji}</span>
+
                   <div>
                     <h2>{group.title}</h2>
                     <p>
@@ -157,12 +194,53 @@ function Collection() {
                       <div key={project.id} className="collection-item">
                         <ProjectCard project={project} />
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFromCollection(project.id)}
-                        >
-                          Ukloni iz kolekcije
-                        </button>
+                        <div className="collection-item-actions">
+                          <div className="collection-status-dropdown">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenStatusMenu(
+                                  openStatusMenu === project.id
+                                    ? null
+                                    : project.id
+                                )
+                              }
+                            >
+                              Promijeni status ▾
+                            </button>
+
+                            {openStatusMenu === project.id && (
+                              <div className="collection-status-menu">
+                                {statusGroups.map((status) => (
+                                  <button
+                                    key={status.id}
+                                    type="button"
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        project.id,
+                                        status.id,
+                                        status.title
+                                      )
+                                    }
+                                  >
+                                    <span>{status.emoji}</span>
+                                    {status.title}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="remove-collection-button"
+                            onClick={() =>
+                              handleRemoveFromCollection(project.id)
+                            }
+                          >
+                            Ukloni iz kolekcije
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
