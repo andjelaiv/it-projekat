@@ -458,7 +458,7 @@ router.put("/projects/:id", authenticateToken, (req, res) => {
       const updateSql = `
         UPDATE projects
         SET title = ?, description = ?, estimated_time = ?, pattern_text = ?,
-            difficulty_id = ?, category_id = ?, cover_image = ?
+            difficulty_id = ?, category_id = ?
         WHERE id = ?
       `;
 

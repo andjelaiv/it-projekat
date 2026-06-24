@@ -1043,3 +1043,22 @@
   left: 0;
   right: 0;
 }
+.details-actions .delete-project-button {
+  background-color: var(--coral);
+  color: white;
+}
+
+.details-actions .delete-project-button:hover {
+  background-color: var(--blush);
+  color: white;
+}
+
+.details-actions .edit-project-button {
+  background-color: var(--sea);
+  color: white;
+}
+
+.details-actions .edit-project-button:hover {
+  background-color: var(--matcha);
+  color: white;
+}

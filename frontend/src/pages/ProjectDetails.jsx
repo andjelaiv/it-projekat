@@ -124,6 +124,7 @@ function ProjectDetails() {
     setLoading(true);
 
     Promise.all([fetchProject(), fetchReviews(), fetchProjectImages()]).finally(() => {
+      checkIfFavorite();
       setLoading(false);
     });
   }, [id]);
@@ -342,6 +343,40 @@ function ProjectDetails() {
       });
   };
 
+  const handleDeleteProject = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Da li sigurno želiš da obrišeš ovaj projekat? Ova akcija se ne može poništiti."
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    axios
+      .delete(`http://localhost:5000/api/projects/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        navigate("/projekti");
+      })
+      .catch((error) => {
+        console.error("Greška pri brisanju projekta:", error);
+        setCollectionMessage(
+          error.response?.data?.message ||
+          "Došlo je do greške pri brisanju projekta."
+        );
+      });
+  };
+
   const getReviewUsername = (review) => {
     return review.username || review.author || review.user_username || "korisnik";
   };
@@ -426,6 +461,16 @@ function ProjectDetails() {
 
   const displayReviewCount =
     Number(project.review_count) > 0 ? Number(project.review_count) : reviews.length;
+
+  const currentUserId = Number(
+    currentUser?.id || currentUser?.user_id || currentUser?.userId
+  );
+
+  const projectAuthorId = Number(project.author_id);
+
+  const canDeleteProject =
+    currentUser &&
+    (currentUser.role === "admin" || currentUserId === projectAuthorId);
 
   return (
     <section className="project-details-page">
@@ -537,6 +582,26 @@ function ProjectDetails() {
                 </div>
               )}
             </div>
+
+            {canDeleteProject && (
+              <button
+                type="button"
+                className="edit-project-button"
+                onClick={() => navigate(`/uredi-projekat/${id}`)}
+              >
+                Uredi projekat
+              </button>
+            )}
+
+            {canDeleteProject && (
+              <button
+                type="button"
+                className="delete-project-button"
+                onClick={handleDeleteProject}
+              >
+                Obriši projekat
+              </button>
+            )}
           </div>
           {collectionMessage && (
             <p className="collection-message">{collectionMessage}</p>

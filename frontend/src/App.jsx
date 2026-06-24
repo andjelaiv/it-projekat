@@ -8,6 +8,8 @@ import LoginRequired from "./pages/LoginRequired";
 import Auth from "./pages/Auth";
 import Favorites from "./pages/Favorites";
 import Collection from "./pages/Collection";
+import AddProject from "./pages/AddProject";
+import EditProject from "./pages/EditProject";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
           <Route path="/prijava" element={<Auth />} />
           <Route path="/admin" element={<h1>Admin panel</h1>} />
           <Route path="/prijava-potrebna" element={<LoginRequired />} />
+          <Route path="/dodaj-projekat" element={<AddProject />} />
+          <Route path="/uredi-projekat/:id" element={<EditProject />} />
         </Routes>
       </main>
     </>
