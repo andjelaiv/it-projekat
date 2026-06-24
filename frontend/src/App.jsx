@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
@@ -8,6 +9,7 @@ import LoginRequired from "./pages/LoginRequired";
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Header />
 
       <main>

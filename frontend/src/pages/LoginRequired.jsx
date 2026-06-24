@@ -12,8 +12,8 @@ function LoginRequired() {
         <h1>Stani, stani!</h1>
 
         <p>
-          Pokušala si da otvoriš tajnu kutiju sa omiljenim projektima, ali
-          Kloopko mora prvo da zna ko si.
+          Pokušavaš da otvoriš kutak koji je rezervisan za članove Kloopka,
+          ali Kloopko mora prvo da zna ko si.
         </p>
 
         <p>

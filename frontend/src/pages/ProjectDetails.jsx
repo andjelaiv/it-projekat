@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./ProjectDetails.css";
 
@@ -15,11 +15,32 @@ function formatRating(rating) {
 
 function ProjectDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [project, setProject] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [activeTab, setActiveTab] = useState("pattern");
   const [loading, setLoading] = useState(true);
+
+  const [newReview, setNewReview] = useState({
+    rating: 0,
+    comment: "",
+  });
+
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const fetchReviews = () => {
+    axios
+      .get(`http://localhost:5000/api/reviews/${id}`)
+      .then((response) => {
+        setReviews(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju komentara:", error);
+      });
+  };
 
   useEffect(() => {
     axios
@@ -34,15 +55,61 @@ function ProjectDetails() {
         setLoading(false);
       });
 
+    fetchReviews();
+  }, [id]);
+
+  const handleReviewSubmit = (event) => {
+    event.preventDefault();
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    if (newReview.rating < 1) {
+      setReviewMessage("Izaberi ocjenu prije slanja recenzije.");
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewMessage("");
+
     axios
-      .get(`http://localhost:5000/api/reviews/${id}`)
-      .then((response) => {
-        setReviews(response.data);
+      .post(
+        "http://localhost:5000/api/reviews",
+        {
+          project_id: Number(id),
+          rating: newReview.rating,
+          comment: newReview.comment,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(() => {
+        setNewReview({
+          rating: 0,
+          comment: "",
+        });
+        setHoverRating(0);
+        setReviewMessage("Recenzija je uspješno poslata ✿");
+        fetchReviews();
       })
       .catch((error) => {
-        console.error("Greška pri učitavanju komentara:", error);
+        console.error("Greška pri slanju recenzije:", error);
+        setReviewMessage(
+          error.response?.data?.message ||
+            "Došlo je do greške pri slanju recenzije."
+        );
+      })
+      .finally(() => {
+        setSubmittingReview(false);
       });
-  }, [id]);
+  };
 
   if (loading) {
     return (
@@ -68,18 +135,20 @@ function ProjectDetails() {
   const materials = project.materials || [];
 
   const calculatedAverage =
-  reviews.length > 0
-    ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) /
-      reviews.length
-    : 0;
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) /
+        reviews.length
+      : 0;
 
-const displayRating =
-  Number(project.average_rating) > 0
-    ? Number(project.average_rating)
-    : calculatedAverage;
+  const displayRating =
+    Number(project.average_rating) > 0
+      ? Number(project.average_rating)
+      : calculatedAverage;
 
-const displayReviewCount =
-  Number(project.review_count) > 0 ? Number(project.review_count) : reviews.length;
+  const displayReviewCount =
+    Number(project.review_count) > 0
+      ? Number(project.review_count)
+      : reviews.length;
 
   return (
     <section className="project-details-page">
@@ -130,13 +199,10 @@ const displayReviewCount =
 
           <div className="details-rating">
             <span>★</span>
-            <strong>{formatRating(project.average_rating)}</strong>
+            <strong>{formatRating(displayRating)}</strong>
             <span>
-              ({project.review_count || reviews.length}{" "}
-              {(project.review_count || reviews.length) === 1
-                ? "recenzija"
-                : "recenzije"}
-              )
+              ({displayReviewCount}{" "}
+              {displayReviewCount === 1 ? "recenzija" : "recenzije"})
             </span>
           </div>
 
@@ -229,6 +295,81 @@ const displayReviewCount =
       ) : (
         <div className="details-tab-content">
           <h2>Komentari i ocjene</h2>
+
+          <form className="review-form" onSubmit={handleReviewSubmit}>
+            <span className="review-sticker-left">🧶</span>
+            <span className="review-sticker-right">✿</span>
+
+            <div className="review-form-heading">
+              <span>♡</span>
+              <div>
+                <h3>Ostavi mali review</h3>
+                <p>Podijeli koliko ti se svidio pattern ♡</p>
+              </div>
+            </div>
+
+            <div className="rating-picker">
+              <span className="rating-label">Ocjena</span>
+
+              <div className="rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    className={
+                      star <= (hoverRating || newReview.rating) ? "active" : ""
+                    }
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() =>
+                      setNewReview((previousReview) => ({
+                        ...previousReview,
+                        rating: star,
+                      }))
+                    }
+                    aria-label={`Ocjena ${star}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <strong>{newReview.rating || 0}/5</strong>
+            </div>
+
+            <div className="review-textarea-wrapper">
+              <textarea
+                maxLength="500"
+                placeholder="Kako ti je išao pattern? ✿"
+                value={newReview.comment}
+                onChange={(event) =>
+                  setNewReview((previousReview) => ({
+                    ...previousReview,
+                    comment: event.target.value,
+                  }))
+                }
+              ></textarea>
+
+              <span>{newReview.comment.length}/500</span>
+            </div>
+
+            {reviewMessage && (
+              <p className="review-message">{reviewMessage}</p>
+            )}
+
+            <div className="review-form-bottom">
+              <div className="review-mini-icons">
+                <span>♡</span>
+                <span>✿</span>
+                <span>🧶</span>
+                <span>✦</span>
+              </div>
+
+              <button type="submit" disabled={submittingReview}>
+                {submittingReview ? "Šalje se..." : "Pošalji ♡"}
+              </button>
+            </div>
+          </form>
 
           {reviews.length > 0 ? (
             <div className="reviews-list">
