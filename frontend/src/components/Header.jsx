@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 
 function HomeIcon() {
@@ -102,6 +103,32 @@ function UserIcon() {
 }
 
 function Header() {
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const protectedLink = (path) => {
+    return user ? path : "/prijava-potrebna";
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setUser(null);
+    setDropdownOpen(false);
+    navigate("/");
+  };
+
   return (
     <header className="site-header">
       <Link to="/" className="logo" aria-label="Početna">
@@ -116,26 +143,64 @@ function Header() {
           <SearchIcon />
         </Link>
 
-        <Link to="/prijava-potrebna" className="icon-link" aria-label="Favoriti">
+        <Link
+          to={protectedLink("/favoriti")}
+          className="icon-link"
+          aria-label="Favoriti"
+        >
           <HeartIcon />
         </Link>
 
         <Link
-          to="/prijava-potrebna"
+          to={protectedLink("/moja-kolekcija")}
           className="icon-link"
           aria-label="Moja kolekcija"
         >
           <BookmarkIcon />
         </Link>
 
-        <Link to="/admin" className="icon-link" aria-label="Admin panel">
-          <ShieldIcon />
-        </Link>
+        {user?.role === "admin" && (
+          <Link to="/admin" className="icon-link" aria-label="Admin panel">
+            <ShieldIcon />
+          </Link>
+        )}
 
-        <Link to="/prijava" className="login-button">
-          <UserIcon />
-          Prijava
-        </Link>
+        {!user ? (
+          <Link to="/prijava" className="login-button">
+            <UserIcon />
+            Prijava
+          </Link>
+        ) : (
+          <div className="user-menu">
+            <button
+              type="button"
+              className="login-button user-menu-button"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              @{user.username}
+              <span className="dropdown-arrow">▼</span>
+            </button>
+
+            {dropdownOpen && (
+              <div className="user-dropdown">
+                <Link to="/profil" onClick={() => setDropdownOpen(false)}>
+                  Moj profil
+                </Link>
+
+                <Link
+                  to="/dodaj-projekat"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  Dodaj projekat
+                </Link>
+
+                <button type="button" onClick={handleLogout}>
+                  Odjava
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

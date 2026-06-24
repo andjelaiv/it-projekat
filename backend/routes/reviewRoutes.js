@@ -47,10 +47,12 @@ router.get("/reviews/:projectId", (req, res) => {
   const sql = `
     SELECT
       r.id,
+      r.user_id,
+      r.project_id,
       r.rating,
       r.comment,
       r.created_at,
-      u.username AS user
+      u.username
     FROM reviews r
     JOIN users u ON r.user_id = u.id
     WHERE r.project_id = ?
@@ -60,7 +62,7 @@ router.get("/reviews/:projectId", (req, res) => {
   db.query(sql, [projectId], (err, results) => {
     if (err) {
       return res.status(500).json({
-        message: "Greška pri učitavanju recenzija.",
+        message: "Greška pri učitavanju komentara.",
         error: err,
       });
     }

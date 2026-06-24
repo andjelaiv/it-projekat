@@ -816,3 +816,26 @@
     min-height: 320px;
   }
 }
+.review-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-actions button {
+  border: 2px solid var(--dark);
+  border-radius: 999px;
+  background-color: var(--blush);
+  color: white;
+  padding: 7px 12px;
+  font-family: var(--body-font);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 3px 3px 0 var(--dark);
+  cursor: pointer;
+  transition: 0.16s ease;
+}
+
+.review-actions button:hover {
+  transform: translateY(-2px) rotate(-1deg);
+}

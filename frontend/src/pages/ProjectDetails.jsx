@@ -17,6 +17,15 @@ function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const savedUser = localStorage.getItem("user");
+  let currentUser = null;
+
+  try {
+    currentUser = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    currentUser = null;
+  }
+
   const [project, setProject] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [activeTab, setActiveTab] = useState("pattern");
@@ -31,8 +40,19 @@ function ProjectDetails() {
   const [reviewMessage, setReviewMessage] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const fetchProject = () => {
+    return axios
+      .get(`http://localhost:5000/api/projects/${id}`)
+      .then((response) => {
+        setProject(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju projekta:", error);
+      });
+  };
+
   const fetchReviews = () => {
-    axios
+    return axios
       .get(`http://localhost:5000/api/reviews/${id}`)
       .then((response) => {
         setReviews(response.data);
@@ -43,19 +63,11 @@ function ProjectDetails() {
   };
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/api/projects/${id}`)
-      .then((response) => {
-        setProject(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju projekta:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    setLoading(true);
 
-    fetchReviews();
+    Promise.all([fetchProject(), fetchReviews()]).finally(() => {
+      setLoading(false);
+    });
   }, [id]);
 
   const handleReviewSubmit = (event) => {
@@ -95,9 +107,12 @@ function ProjectDetails() {
           rating: 0,
           comment: "",
         });
+
         setHoverRating(0);
         setReviewMessage("Recenzija je uspješno poslata ✿");
+
         fetchReviews();
+        fetchProject();
       })
       .catch((error) => {
         console.error("Greška pri slanju recenzije:", error);
@@ -109,6 +124,62 @@ function ProjectDetails() {
       .finally(() => {
         setSubmittingReview(false);
       });
+  };
+
+  const handleDeleteReview = (reviewId) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Da li sigurno želiš da obrišeš ovaj komentar?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    axios
+      .delete(`http://localhost:5000/api/reviews/${reviewId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        setReviewMessage("Komentar je obrisan.");
+        fetchReviews();
+        fetchProject();
+      })
+      .catch((error) => {
+        console.error("Greška pri brisanju komentara:", error);
+        setReviewMessage(
+          error.response?.data?.message ||
+            "Došlo je do greške pri brisanju komentara."
+        );
+      });
+  };
+
+  const getReviewUsername = (review) => {
+    return review.username || review.author || review.user_username || "korisnik";
+  };
+
+  const canDeleteReview = (review) => {
+    if (!currentUser) {
+      return false;
+    }
+
+    const reviewUserId = Number(
+      review.user_id || review.userId || review.author_id || review.authorId
+    );
+
+    const currentUserId = Number(
+      currentUser.id || currentUser.user_id || currentUser.userId
+    );
+
+    return currentUser.role === "admin" || reviewUserId === currentUserId;
   };
 
   if (loading) {
@@ -146,9 +217,7 @@ function ProjectDetails() {
       : calculatedAverage;
 
   const displayReviewCount =
-    Number(project.review_count) > 0
-      ? Number(project.review_count)
-      : reviews.length;
+    Number(project.review_count) > 0 ? Number(project.review_count) : reviews.length;
 
   return (
     <section className="project-details-page">
@@ -221,8 +290,24 @@ function ProjectDetails() {
           </div>
 
           <div className="details-actions">
-            <button type="button">♡ Dodaj u favorite</button>
-            <button type="button" className="secondary-action">
+            <button
+              type="button"
+              onClick={() =>
+                currentUser ? navigate("/favoriti") : navigate("/prijava-potrebna")
+              }
+            >
+              ♡ Dodaj u favorite
+            </button>
+
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={() =>
+                currentUser
+                  ? navigate("/moja-kolekcija")
+                  : navigate("/prijava-potrebna")
+              }
+            >
               Dodaj u kolekciju
             </button>
           </div>
@@ -289,7 +374,8 @@ function ProjectDetails() {
           <h2>Pattern / Uputstvo</h2>
 
           <p className="pattern-text">
-            {project.pattern_text || "Za ovaj projekat još nije dodato uputstvo."}
+            {project.pattern_text ||
+              "Za ovaj projekat još nije dodato uputstvo."}
           </p>
         </div>
       ) : (
@@ -353,9 +439,7 @@ function ProjectDetails() {
               <span>{newReview.comment.length}/500</span>
             </div>
 
-            {reviewMessage && (
-              <p className="review-message">{reviewMessage}</p>
-            )}
+            {reviewMessage && <p className="review-message">{reviewMessage}</p>}
 
             <div className="review-form-bottom">
               <div className="review-mini-icons">
@@ -376,8 +460,20 @@ function ProjectDetails() {
               {reviews.map((review) => (
                 <div key={review.id} className="review-card">
                   <div className="review-header">
-                    <strong>@{review.username}</strong>
-                    <span>★ {review.rating}</span>
+                    <strong>@{getReviewUsername(review)}</strong>
+
+                    <div className="review-actions">
+                      <span>★ {review.rating}</span>
+
+                      {canDeleteReview(review) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReview(review.id)}
+                        >
+                          Obriši
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <p>{review.comment || "Korisnik nije ostavio komentar."}</p>
