@@ -935,3 +935,111 @@
 .collection-dropdown-menu {
   z-index: 999;
 }
+.project-process-gallery {
+  margin-top: 42px;
+  background-color: var(--paper);
+  border: 4px solid var(--dark);
+  border-radius: 34px;
+  padding: 28px;
+  box-shadow:
+    10px 10px 0 var(--sea),
+    -8px -8px 0 var(--butter);
+}
+
+.process-gallery-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.process-gallery-heading > span {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  background-color: var(--blush);
+  color: white;
+  border: 3px solid var(--dark);
+  border-radius: 50%;
+  font-size: 24px;
+  box-shadow: 5px 5px 0 var(--dark);
+}
+
+.process-gallery-heading h2 {
+  margin: 0;
+  font-size: 38px;
+  line-height: 0.95;
+  color: var(--dark);
+  text-shadow: 3px 3px 0 var(--butter);
+}
+
+.process-gallery-heading p {
+  margin: 7px 0 0;
+  color: var(--brown);
+  font-family: var(--body-font);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.process-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.process-gallery-card {
+  background-color: var(--white-paper);
+  border: 3px solid var(--dark);
+  border-radius: 24px;
+  padding: 10px;
+  box-shadow: 6px 6px 0 var(--dark);
+}
+
+.process-gallery-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border: 3px solid var(--dark);
+  border-radius: 18px;
+}
+
+.process-gallery-card span {
+  display: block;
+  margin-top: 9px;
+  color: var(--dark);
+  font-family: var(--body-font);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .process-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .project-process-gallery {
+    padding: 22px;
+  }
+
+  .process-gallery-heading {
+    align-items: flex-start;
+  }
+
+  .process-gallery-heading h2 {
+    font-size: 30px;
+  }
+
+  .process-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Mala korekcija talasa na details kartici */
+.details-info-card::before {
+  left: 0;
+  right: 0;
+}

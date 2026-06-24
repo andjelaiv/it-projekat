@@ -318,6 +318,32 @@ router.put("/projects/:id/featured", authenticateToken, (req, res) => {
     });
   });
 });
+// SLIKE PROJEKTA
+router.get("/projects/:id/images", (req, res) => {
+  const projectId = req.params.id;
+
+  const sql = `
+    SELECT 
+      id,
+      project_id,
+      image_url,
+      image_type
+    FROM project_images
+    WHERE project_id = ?
+    ORDER BY id ASC
+  `;
+
+  db.query(sql, [projectId], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Greška pri učitavanju slika projekta.",
+        error: err,
+      });
+    }
+
+    res.json(results);
+  });
+});
 // DETALJI JEDNOG PROJEKTA
 router.get("/projects/:id", (req, res) => {
   const projectId = req.params.id;

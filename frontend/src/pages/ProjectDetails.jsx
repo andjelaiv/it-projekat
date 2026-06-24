@@ -42,7 +42,7 @@ function ProjectDetails() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [collectionDropdownOpen, setCollectionDropdownOpen] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
-
+  const [projectImages, setProjectImages] = useState([]);
   const collectionOptions = [
     {
       id: 1,
@@ -83,6 +83,17 @@ function ProjectDetails() {
       });
   };
 
+  const fetchProjectImages = () => {
+    return axios
+      .get(`http://localhost:5000/api/projects/${id}/images`)
+      .then((response) => {
+        setProjectImages(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju galerije:", error);
+      });
+  };
+
   const checkIfFavorite = () => {
     const token = localStorage.getItem("token");
 
@@ -112,8 +123,7 @@ function ProjectDetails() {
   useEffect(() => {
     setLoading(true);
 
-    Promise.all([fetchProject(), fetchReviews()]).finally(() => {
-      checkIfFavorite();
+    Promise.all([fetchProject(), fetchReviews(), fetchProjectImages()]).finally(() => {
       setLoading(false);
     });
   }, [id]);
@@ -166,7 +176,7 @@ function ProjectDetails() {
         console.error("Greška pri slanju recenzije:", error);
         setReviewMessage(
           error.response?.data?.message ||
-            "Došlo je do greške pri slanju recenzije."
+          "Došlo je do greške pri slanju recenzije."
         );
       })
       .finally(() => {
@@ -205,7 +215,7 @@ function ProjectDetails() {
         console.error("Greška pri brisanju komentara:", error);
         setReviewMessage(
           error.response?.data?.message ||
-            "Došlo je do greške pri brisanju komentara."
+          "Došlo je do greške pri brisanju komentara."
         );
       });
   };
@@ -230,7 +240,7 @@ function ProjectDetails() {
         .catch((error) => {
           console.error("Greška pri uklanjanju iz favorita:", error);
         });
-    return;
+      return;
     }
 
     axios
@@ -372,13 +382,41 @@ function ProjectDetails() {
     ? `http://localhost:5000${project.cover_image}`
     : null;
 
+  const getGalleryImageUrl = (imagePath) => {
+    if (!imagePath) {
+      return null;
+    }
+
+    if (imagePath.startsWith("http")) {
+      return imagePath;
+    }
+
+    return `http://localhost:5000${imagePath}`;
+  };
+
+  const getGalleryImageLabel = (imageType, index) => {
+    if (imageType === "progress") {
+      return `Proces ${index + 1}`;
+    }
+
+    if (imageType === "finished") {
+      return "Gotovo";
+    }
+
+    if (imageType === "detail") {
+      return "Detalj";
+    }
+
+    return `Slika ${index + 1}`;
+  };
+
   const tags = project.tags || [];
   const materials = project.materials || [];
 
   const calculatedAverage =
     reviews.length > 0
       ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) /
-        reviews.length
+      reviews.length
       : 0;
 
   const displayRating =
@@ -498,13 +536,43 @@ function ProjectDetails() {
                   ))}
                 </div>
               )}
-          </div>
+            </div>
           </div>
           {collectionMessage && (
             <p className="collection-message">{collectionMessage}</p>
           )}
         </div>
       </div>
+
+      {projectImages.length > 0 && (
+        <section className="project-process-gallery">
+          <div className="process-gallery-heading">
+            <span>✿</span>
+
+            <div>
+              <h2>Galerija izrade</h2>
+              <p>Proces, detalji i finalni izgled projekta.</p>
+            </div>
+          </div>
+
+          <div className="process-gallery-grid">
+            {projectImages.slice(0, 4).map((image, index) => {
+              const galleryImageUrl = getGalleryImageUrl(image.image_url);
+
+              return (
+                <div className="process-gallery-card" key={image.id || index}>
+                  <img
+                    src={galleryImageUrl}
+                    alt={getGalleryImageLabel(image.image_type, index)}
+                  />
+
+                  <span>{getGalleryImageLabel(image.image_type, index)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="details-section-grid">
         <div className="details-box">
