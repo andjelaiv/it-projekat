@@ -189,3 +189,14 @@
     padding: 16px;
   }
 }
+
+.favorite-card-button.active {
+  background-color: var(--blush);
+  color: white;
+  transform: scale(1.07) rotate(-8deg);
+}
+
+.favorite-card-button.active:hover {
+  background-color: var(--blush);
+  color: white;
+}

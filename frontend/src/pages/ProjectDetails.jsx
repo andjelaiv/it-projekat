@@ -39,6 +39,27 @@ function ProjectDetails() {
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewMessage, setReviewMessage] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [collectionDropdownOpen, setCollectionDropdownOpen] = useState(false);
+  const [collectionMessage, setCollectionMessage] = useState("");
+
+  const collectionOptions = [
+    {
+      id: 1,
+      label: "Želim napraviti",
+      emoji: "♡",
+    },
+    {
+      id: 2,
+      label: "U izradi",
+      emoji: "🧶",
+    },
+    {
+      id: 3,
+      label: "Završeno",
+      emoji: "✓",
+    },
+  ];
 
   const fetchProject = () => {
     return axios
@@ -62,10 +83,37 @@ function ProjectDetails() {
       });
   };
 
+  const checkIfFavorite = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setIsFavorite(false);
+      return;
+    }
+
+    axios
+      .get("http://localhost:5000/api/favorites/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        const alreadyFavorite = response.data.some(
+          (favoriteProject) => Number(favoriteProject.id) === Number(id)
+        );
+
+        setIsFavorite(alreadyFavorite);
+      })
+      .catch((error) => {
+        console.error("Greška pri provjeri favorita:", error);
+      });
+  };
+
   useEffect(() => {
     setLoading(true);
 
     Promise.all([fetchProject(), fetchReviews()]).finally(() => {
+      checkIfFavorite();
       setLoading(false);
     });
   }, [id]);
@@ -159,6 +207,128 @@ function ProjectDetails() {
           error.response?.data?.message ||
             "Došlo je do greške pri brisanju komentara."
         );
+      });
+  };
+  const handleFavoriteToggle = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    if (isFavorite) {
+      axios
+        .delete(`http://localhost:5000/api/favorites/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then(() => {
+          setIsFavorite(false);
+        })
+        .catch((error) => {
+          console.error("Greška pri uklanjanju iz favorita:", error);
+        });
+    return;
+    }
+
+    axios
+      .post(
+        "http://localhost:5000/api/favorites",
+        {
+          project_id: Number(id),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(() => {
+        setIsFavorite(true);
+      })
+      .catch((error) => {
+        const message = error.response?.data?.message || "";
+
+        if (
+          message.toLowerCase().includes("već") ||
+          message.toLowerCase().includes("already")
+        ) {
+          setIsFavorite(true);
+          return;
+        }
+
+        console.error("Greška pri dodavanju u favorite:", error);
+      });
+  };
+
+  const handleCollectionSelect = (statusId, statusLabel) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    setCollectionMessage("");
+
+    axios
+      .post(
+        "http://localhost:5000/api/collection",
+        {
+          project_id: Number(id),
+          status_id: statusId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(() => {
+        setCollectionDropdownOpen(false);
+        setCollectionMessage(`Projekat je dodat u kolekciju: ${statusLabel}.`);
+      })
+      .catch((error) => {
+        const message = error.response?.data?.message || "";
+
+        if (
+          message.toLowerCase().includes("već") ||
+          message.toLowerCase().includes("vec") ||
+          message.toLowerCase().includes("already") ||
+          error.response?.status === 409
+        ) {
+          axios
+            .put(
+              `http://localhost:5000/api/collection/${id}`,
+              {
+                status_id: statusId,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            )
+            .then(() => {
+              setCollectionDropdownOpen(false);
+              setCollectionMessage(
+                `Status u kolekciji je promijenjen: ${statusLabel}.`
+              );
+            })
+            .catch((updateError) => {
+              console.error("Greška pri izmjeni statusa:", updateError);
+              setCollectionMessage(
+                "Došlo je do greške pri izmjeni statusa u kolekciji."
+              );
+            });
+
+          return;
+        }
+
+        console.error("Greška pri dodavanju u kolekciju:", error);
+        setCollectionMessage("Došlo je do greške pri dodavanju u kolekciju.");
       });
   };
 
@@ -292,25 +462,47 @@ function ProjectDetails() {
           <div className="details-actions">
             <button
               type="button"
-              onClick={() =>
-                currentUser ? navigate("/favoriti") : navigate("/prijava-potrebna")
-              }
+              onClick={handleFavoriteToggle}
+              className={isFavorite ? "favorite-details-active" : ""}
             >
-              ♡ Dodaj u favorite
+              {isFavorite ? "♥ Projekat u favoritima" : "♡ Dodaj u favorite"}
             </button>
 
-            <button
-              type="button"
-              className="secondary-action"
-              onClick={() =>
-                currentUser
-                  ? navigate("/moja-kolekcija")
-                  : navigate("/prijava-potrebna")
-              }
-            >
-              Dodaj u kolekciju
-            </button>
+            <div className="collection-dropdown">
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => {
+                  if (!currentUser) {
+                    navigate("/prijava-potrebna");
+                    return;
+                  }
+
+                  setCollectionDropdownOpen(!collectionDropdownOpen);
+                }}
+              >
+                Dodaj u kolekciju ▾
+              </button>
+
+              {collectionDropdownOpen && (
+                <div className="collection-dropdown-menu">
+                  {collectionOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => handleCollectionSelect(option.id, option.label)}
+                    >
+                      <span>{option.emoji}</span>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
           </div>
+          </div>
+          {collectionMessage && (
+            <p className="collection-message">{collectionMessage}</p>
+          )}
         </div>
       </div>
 

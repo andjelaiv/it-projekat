@@ -1,0 +1,200 @@
+.favorites-page {
+  width: min(100% - 48px, 1320px);
+  margin: 0 auto;
+  padding: 54px 0 92px;
+}
+
+.favorites-hero {
+  background:
+    linear-gradient(135deg, var(--blush), #ffe7ef 48%, var(--butter));
+  border: 4px solid var(--dark);
+  border-radius: 42px;
+  padding: 54px 38px 48px;
+  text-align: center;
+  box-shadow:
+    12px 12px 0 var(--sea),
+    -8px -8px 0 var(--butter);
+  position: relative;
+  overflow: hidden;
+}
+
+.favorites-hero::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: -34px;
+  height: 78px;
+  background:
+    radial-gradient(circle at 36px 38px, var(--paper) 0 34px, transparent 35px)
+      0 0 / 78px 78px repeat-x;
+}
+
+.favorites-sticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tangerine);
+  color: white;
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-family: var(--body-font);
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 5px 5px 0 var(--dark);
+  position: relative;
+  z-index: 2;
+}
+
+.favorites-hero h1 {
+  margin: 24px 0 0;
+  font-size: clamp(58px, 8vw, 104px);
+  line-height: 0.9;
+  color: var(--dark);
+  text-shadow:
+    4px 4px 0 var(--butter),
+    8px 8px 0 rgba(38, 18, 13, 0.12);
+  position: relative;
+  z-index: 2;
+}
+
+.favorites-hero p {
+  max-width: 640px;
+  margin: 24px auto 0;
+  color: var(--brown);
+  font-family: var(--body-font);
+  font-size: 19px;
+  line-height: 1.6;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
+}
+
+.favorites-message,
+.favorites-message-card {
+  width: fit-content;
+  max-width: 100%;
+  margin: 34px auto 0;
+  background-color: var(--butter);
+  color: var(--dark);
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-family: var(--body-font);
+  font-weight: 900;
+  box-shadow: 5px 5px 0 var(--dark);
+}
+
+.favorites-empty {
+  max-width: 680px;
+  margin: 54px auto 0;
+  background-color: var(--paper);
+  border: 4px solid var(--dark);
+  border-radius: 36px;
+  padding: 42px 30px;
+  text-align: center;
+  box-shadow:
+    10px 10px 0 var(--blush),
+    -7px -7px 0 var(--matcha);
+}
+
+.favorites-empty-icon {
+  width: 86px;
+  height: 86px;
+  margin: 0 auto 22px;
+  background-color: var(--blush);
+  color: white;
+  border: 4px solid var(--dark);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  font-weight: 900;
+  box-shadow: 7px 7px 0 var(--dark);
+}
+
+.favorites-empty h2 {
+  margin: 0;
+  font-size: 44px;
+  color: var(--dark);
+  text-shadow: 3px 3px 0 var(--butter);
+}
+
+.favorites-empty p {
+  max-width: 500px;
+  margin: 16px auto 0;
+  color: var(--brown);
+  font-family: var(--body-font);
+  font-size: 17px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.favorites-empty a {
+  width: fit-content;
+  margin: 26px auto 0;
+  display: flex;
+  background-color: var(--tangerine);
+  color: white;
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  padding: 14px 22px;
+  font-family: var(--body-font);
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 5px 5px 0 var(--dark);
+  transition: 0.18s ease;
+}
+
+.favorites-empty a:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.favorites-grid {
+  margin-top: 54px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: 34px;
+}
+
+.favorite-item {
+  display: grid;
+  gap: 16px;
+}
+
+.remove-favorite-button {
+  width: fit-content;
+  justify-self: center;
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  background-color: var(--blush);
+  color: white;
+  padding: 12px 18px;
+  font-family: var(--body-font);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 5px 5px 0 var(--dark);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.remove-favorite-button:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+@media (max-width: 700px) {
+  .favorites-page {
+    width: min(100% - 28px, 1320px);
+    padding-top: 42px;
+  }
+
+  .favorites-hero {
+    padding: 42px 22px;
+    border-radius: 32px;
+  }
+
+  .favorites-empty h2 {
+    font-size: 34px;
+  }
+}

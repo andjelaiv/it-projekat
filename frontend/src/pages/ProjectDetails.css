@@ -839,3 +839,99 @@
 .review-actions button:hover {
   transform: translateY(-2px) rotate(-1deg);
 }
+.details-actions button.favorite-details-active {
+  background-color: var(--blush);
+  color: white;
+}
+
+.details-actions button.favorite-details-active:hover {
+  background-color: var(--blush);
+  color: white;
+}
+.collection-dropdown {
+  position: relative;
+  width: fit-content;
+}
+
+.collection-dropdown-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 14px);
+  width: 230px;
+  background-color: var(--paper);
+  border: 3px solid var(--dark);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: 7px 7px 0 var(--dark);
+  display: grid;
+  gap: 8px;
+  z-index: 30;
+}
+
+.collection-dropdown-menu button {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background-color: transparent;
+  color: var(--dark);
+  padding: 11px 12px;
+  font-family: var(--body-font);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.collection-dropdown-menu button:hover {
+  background-color: var(--butter);
+  border-color: var(--dark);
+}
+
+.collection-dropdown-menu span {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--dark);
+  border-radius: 50%;
+  background-color: var(--blush);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.collection-message {
+  width: fit-content;
+  max-width: 100%;
+  margin: 18px 0 0;
+  background-color: var(--butter);
+  color: var(--dark);
+  border: 3px solid var(--dark);
+  border-radius: 999px;
+  padding: 10px 15px;
+  font-family: var(--body-font);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 4px 4px 0 var(--dark);
+}
+.project-details-layout,
+.details-info-card,
+.details-actions {
+  overflow: visible;
+}
+
+.details-info-card {
+  position: relative;
+  z-index: 5;
+}
+
+.collection-dropdown {
+  position: relative;
+  z-index: 50;
+}
+
+.collection-dropdown-menu {
+  z-index: 999;
+}

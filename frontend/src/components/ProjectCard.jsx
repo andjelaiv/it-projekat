@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./ProjectCard.css";
 
 function formatRating(rating) {
@@ -12,9 +14,97 @@ function formatRating(rating) {
 }
 
 function ProjectCard({ project }) {
+  const navigate = useNavigate();
+  const [isFavorite, setIsFavorite] = useState(false);
+
   const imageUrl = project.cover_image
     ? `http://localhost:5000${project.cover_image}`
     : null;
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setIsFavorite(false);
+      return;
+    }
+
+    axios
+      .get("http://localhost:5000/api/favorites/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        const alreadyFavorite = response.data.some(
+          (favoriteProject) => Number(favoriteProject.id) === Number(project.id)
+        );
+
+        setIsFavorite(alreadyFavorite);
+      })
+      .catch((error) => {
+        console.error("Greška pri provjeri favorita:", error);
+      });
+  }, [project.id]);
+
+  const handleFavoriteClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
+
+    if (isFavorite) {
+      axios
+        .delete(`http://localhost:5000/api/favorites/${project.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then(() => {
+          setIsFavorite(false);
+        })
+        .catch((error) => {
+          console.error("Greška pri uklanjanju iz favorita:", error);
+        });
+
+      return;
+    }
+
+    axios
+      .post(
+        "http://localhost:5000/api/favorites",
+        {
+          project_id: project.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(() => {
+        setIsFavorite(true);
+      })
+      .catch((error) => {
+        const message = error.response?.data?.message || "";
+
+        if (
+          message.toLowerCase().includes("već") ||
+          message.toLowerCase().includes("vec") ||
+          message.toLowerCase().includes("already")
+        ) {
+          setIsFavorite(true);
+          return;
+        }
+
+        console.error("Greška pri dodavanju u favorite:", error);
+      });
+  };
 
   return (
     <Link to={`/projekti/${project.id}`} className="project-card">
@@ -25,17 +115,18 @@ function ProjectCard({ project }) {
 
         <button
           type="button"
-          className="favorite-card-button"
-          aria-label="Dodaj u favorite"
-          onClick={(event) => {
-            event.preventDefault();
-          }}
+          className={`favorite-card-button ${isFavorite ? "active" : ""}`}
+          onClick={handleFavoriteClick}
+          aria-label={
+            isFavorite ? "Ukloni iz favorita" : "Dodaj u favorite"
+          }
+          title={isFavorite ? "Ukloni iz favorita" : "Dodaj u favorite"}
         >
-          ♡
+          {isFavorite ? "♥" : "♡"}
         </button>
 
         {imageUrl ? (
-          <img src={imageUrl} alt={project.title} className="project-image" />
+          <img className="project-image" src={imageUrl} alt={project.title} />
         ) : (
           <div className="project-image-placeholder">Nema slike</div>
         )}
@@ -50,13 +141,13 @@ function ProjectCard({ project }) {
 
         <h3>{project.title}</h3>
 
-        <p className="project-author">@{project.author || "autor"}</p>
+        <p className="project-author">@{project.author}</p>
 
         <div className="project-rating">
           <span>★</span>
           <span>{formatRating(project.average_rating)}</span>
 
-          {project.review_count > 0 && (
+          {Number(project.review_count) > 0 && (
             <span className="review-count">({project.review_count})</span>
           )}
         </div>
