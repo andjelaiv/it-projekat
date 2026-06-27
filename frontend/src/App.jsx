@@ -10,6 +10,7 @@ import Favorites from "./pages/Favorites";
 import Collection from "./pages/Collection";
 import AddProject from "./pages/AddProject";
 import EditProject from "./pages/EditProject";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/prijava-potrebna" element={<LoginRequired />} />
           <Route path="/dodaj-projekat" element={<AddProject />} />
           <Route path="/uredi-projekat/:id" element={<EditProject />} />
+          <Route path="/profil/:id" element={<Profile />} />
         </Routes>
       </main>
     </>

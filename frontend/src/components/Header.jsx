@@ -183,7 +183,10 @@ function Header() {
 
             {dropdownOpen && (
               <div className="user-dropdown">
-                <Link to="/profil" onClick={() => setDropdownOpen(false)}>
+                <Link
+                  to={`/profil/${user.id}`}
+                  onClick={() => setDropdownOpen(false)}
+                >
                   Moj profil
                 </Link>
 
