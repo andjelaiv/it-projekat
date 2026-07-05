@@ -257,7 +257,8 @@
   }
 
   .filters-panel {
-    position: static;
+    position: relative;
+    top:auto;
   }
 
   .projects-page-grid {

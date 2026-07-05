@@ -214,7 +214,16 @@
     height: 34px;
     border-width: 2px;
     border-radius: 12px;
-    box-shadow: none !important;
+  }
+  .icon-link:active {
+    transform: translateY(-3px) rotate(-5deg) scale(0.96);
+    color: white;
+    background-color: var(--dark);
+  }
+
+  .login-button:active {
+    transform: translateY(-2px) rotate(1deg);
+    box-shadow: 6px 6px 0 var(--tangerine);
   }
 
   .header-icon {

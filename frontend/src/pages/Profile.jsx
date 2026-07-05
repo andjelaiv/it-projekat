@@ -26,8 +26,16 @@ function Profile() {
       axios.get(`http://localhost:5000/api/users/${id}/collection`),
     ])
       .then(([userResponse, projectsResponse, favoritesResponse, collectionResponse]) => {
-        setProfileUser(userResponse.data);
-        setProjects(projectsResponse.data);
+        const userData = userResponse.data;
+
+        const projectsWithAuthor = projectsResponse.data.map((project) => ({
+          ...project,
+          author: project.author || userData.username,
+          author_id: project.author_id || userData.id,
+        }));
+
+        setProfileUser(userData);
+        setProjects(projectsWithAuthor);
         setFavorites(favoritesResponse.data);
         setCollection(collectionResponse.data);
       })
@@ -35,7 +43,7 @@ function Profile() {
         console.error("Greška pri učitavanju profila:", error);
         setMessage(
           error.response?.data?.message ||
-            "Došlo je do greške pri učitavanju profila."
+          "Došlo je do greške pri učitavanju profila."
         );
       })
       .finally(() => {

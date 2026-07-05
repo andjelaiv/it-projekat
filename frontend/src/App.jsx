@@ -11,6 +11,9 @@ import Collection from "./pages/Collection";
 import AddProject from "./pages/AddProject";
 import EditProject from "./pages/EditProject";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import ProtectedRoute from "./components/ProtectedRoute";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -26,11 +29,35 @@ function App() {
           <Route path="/moja-kolekcija" element={<Collection />} />
           <Route path="/favoriti" element={<Favorites />} />
           <Route path="/prijava" element={<Auth />} />
-          <Route path="/admin" element={<h1>Admin panel</h1>} />
           <Route path="/prijava-potrebna" element={<LoginRequired />} />
-          <Route path="/dodaj-projekat" element={<AddProject />} />
-          <Route path="/uredi-projekat/:id" element={<EditProject />} />
+          <Route
+            path="/dodaj-projekat"
+            element={
+              <ProtectedRoute>
+                <AddProject />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/uredi-projekat/:id"
+            element={
+              <ProtectedRoute>
+                <EditProject />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <Admin />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/profil/:id" element={<Profile />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </>

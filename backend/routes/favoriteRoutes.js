@@ -48,15 +48,31 @@ router.get("/favorites/me", authenticateToken, (req, res) => {
       p.cover_image,
       p.is_featured,
       p.created_at,
+      p.author_id,
       u.username AS author,
       c.name AS category,
-      d.name AS difficulty
+      d.name AS difficulty,
+      COALESCE(AVG(r.rating), 0) AS average_rating,
+      COUNT(DISTINCT r.id) AS review_count
     FROM favorites f
     JOIN projects p ON f.project_id = p.id
     JOIN users u ON p.author_id = u.id
     JOIN categories c ON p.category_id = c.id
     JOIN difficulty_levels d ON p.difficulty_id = d.id
+    LEFT JOIN reviews r ON p.id = r.project_id
     WHERE f.user_id = ?
+    GROUP BY
+      p.id,
+      p.title,
+      p.description,
+      p.estimated_time,
+      p.cover_image,
+      p.is_featured,
+      p.created_at,
+      p.author_id,
+      u.username,
+      c.name,
+      d.name
     ORDER BY p.created_at DESC
   `;
 

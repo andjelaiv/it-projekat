@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import ProjectCard from "../components/ProjectCard";
 import "./ProjectDetails.css";
 
 function formatRating(rating) {
@@ -43,6 +44,7 @@ function ProjectDetails() {
   const [collectionDropdownOpen, setCollectionDropdownOpen] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
   const [projectImages, setProjectImages] = useState([]);
+  const [similarProjects, setSimilarProjects] = useState([]);
   const collectionOptions = [
     {
       id: 1,
@@ -93,6 +95,16 @@ function ProjectDetails() {
         console.error("Greška pri učitavanju galerije:", error);
       });
   };
+  const fetchSimilarProjects = () => {
+    return axios
+      .get(`http://localhost:5000/api/projects/${id}/similar`)
+      .then((response) => {
+        setSimilarProjects(response.data);
+      })
+      .catch((error) => {
+        console.error("Greška pri učitavanju sličnih projekata:", error);
+      });
+  };
 
   const checkIfFavorite = () => {
     const token = localStorage.getItem("token");
@@ -123,7 +135,12 @@ function ProjectDetails() {
   useEffect(() => {
     setLoading(true);
 
-    Promise.all([fetchProject(), fetchReviews(), fetchProjectImages()]).finally(() => {
+    Promise.all([
+      fetchProject(),
+      fetchReviews(),
+      fetchProjectImages(),
+      fetchSimilarProjects(),
+    ]).finally(() => {
       checkIfFavorite();
       setLoading(false);
     });
@@ -657,6 +674,7 @@ function ProjectDetails() {
           ) : (
             <p>Nema dodatih materijala.</p>
           )}
+          
         </div>
 
         <div className="details-box">
@@ -675,6 +693,24 @@ function ProjectDetails() {
           )}
         </div>
       </div>
+            {similarProjects.length > 0 && (
+        <section className="similar-projects-section">
+          <div className="similar-projects-heading">
+            <div>
+              <p>Još malo inspiracije</p>
+              <h2>Možda ti se svidi i...</h2>
+            </div>
+
+            <span>♡</span>
+          </div>
+
+          <div className="similar-projects-grid">
+            {similarProjects.slice(0, 3).map((similarProject) => (
+              <ProjectCard key={similarProject.id} project={similarProject} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="details-tabs">
         <button

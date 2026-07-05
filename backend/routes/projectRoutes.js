@@ -174,6 +174,7 @@ router.get("/projects", (req, res) => {
       p.cover_image,
       p.is_featured,
       p.created_at,
+      p.author_id,
       u.username AS author,
       c.name AS category,
       d.name AS difficulty,
@@ -219,7 +220,7 @@ router.get("/projects", (req, res) => {
   sql += `
     GROUP BY 
       p.id, p.title, p.description, p.estimated_time, p.cover_image,
-      p.is_featured, p.created_at, u.username, c.name, d.name
+      p.is_featured, p.created_at, p.author_id, u.username, c.name, d.name
   `;
 
   if (rating) {
@@ -247,7 +248,6 @@ router.get("/projects", (req, res) => {
   });
 });
 // FEATURED PROJEKTI
-// FEATURED PROJEKTI
 router.get("/projects/featured", (req, res) => {
   const sql = `
     SELECT
@@ -258,6 +258,7 @@ router.get("/projects/featured", (req, res) => {
       p.cover_image,
       p.is_featured,
       p.created_at,
+      p.author_id,
       u.username AS author,
       c.name AS category,
       d.name AS difficulty,
@@ -271,7 +272,7 @@ router.get("/projects/featured", (req, res) => {
     WHERE p.is_featured = true
     GROUP BY
       p.id, p.title, p.description, p.estimated_time, p.cover_image,
-      p.is_featured, p.created_at, u.username, c.name, d.name
+      p.is_featured, p.created_at, p.author_id, u.username, c.name, d.name
     ORDER BY p.created_at DESC
   `;
 
@@ -348,7 +349,7 @@ router.get("/projects/:id/images", (req, res) => {
 router.get("/projects/:id", (req, res) => {
   const projectId = req.params.id;
 
-    const projectSql = `
+  const projectSql = `
       SELECT
         p.id,
         p.title,
@@ -471,7 +472,6 @@ router.put("/projects/:id", authenticateToken, (req, res) => {
           pattern_text,
           difficulty_id,
           category_id,
-          cover_image,
           projectId,
         ],
         (err) => {
@@ -764,7 +764,7 @@ router.get("/projects/:id/similar", (req, res) => {
   const projectId = req.params.id;
 
   const sql = `
-    SELECT DISTINCT
+    SELECT
       p.id,
       p.title,
       p.description,
@@ -772,14 +772,18 @@ router.get("/projects/:id/similar", (req, res) => {
       p.cover_image,
       p.is_featured,
       p.created_at,
+      p.author_id,
       u.username AS author,
       c.name AS category,
-      d.name AS difficulty
+      d.name AS difficulty,
+      COALESCE(AVG(r.rating), 0) AS average_rating,
+      COUNT(DISTINCT r.id) AS review_count
     FROM projects p
     JOIN users u ON p.author_id = u.id
     JOIN categories c ON p.category_id = c.id
     JOIN difficulty_levels d ON p.difficulty_id = d.id
     LEFT JOIN project_tags pt ON p.id = pt.project_id
+    LEFT JOIN reviews r ON p.id = r.project_id
     WHERE p.id != ?
       AND (
         p.category_id = (SELECT category_id FROM projects WHERE id = ?)
@@ -787,6 +791,18 @@ router.get("/projects/:id/similar", (req, res) => {
           SELECT tag_id FROM project_tags WHERE project_id = ?
         )
       )
+    GROUP BY
+      p.id,
+      p.title,
+      p.description,
+      p.estimated_time,
+      p.cover_image,
+      p.is_featured,
+      p.created_at,
+      p.author_id,
+      u.username,
+      c.name,
+      d.name
     ORDER BY p.created_at DESC
     LIMIT 4
   `;
