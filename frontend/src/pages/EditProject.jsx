@@ -339,11 +339,6 @@ function EditProject() {
           </div>
         </div>
 
-        <div className="edit-project-note">
-          <strong>Napomena:</strong> Ovdje trenutno mijenjamo podatke projekta.
-          Izmjenu cover i process slika ćemo dodati kao poseban korak.
-        </div>
-
         {message && <p className="add-project-message">{message}</p>}
 
         <div className="add-project-actions">

@@ -269,20 +269,3 @@
     width: 100%;
   }
 }
-
-.edit-project-note {
-  margin-top: 26px;
-  background-color: var(--butter);
-  color: var(--dark);
-  border: 3px solid var(--dark);
-  border-radius: 24px;
-  padding: 16px 18px;
-  font-family: var(--body-font);
-  font-size: 15px;
-  font-weight: 800;
-  box-shadow: 5px 5px 0 var(--dark);
-}
-
-.edit-project-note strong {
-  color: var(--coral);
-}

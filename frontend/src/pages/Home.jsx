@@ -39,6 +39,16 @@ function SearchIcon() {
 function Home() {
   const navigate = useNavigate();
 
+  const savedUser = localStorage.getItem("user");
+
+  let currentUser = null;
+
+  try {
+    currentUser = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    currentUser = null;
+  }
+
   const [stats, setStats] = useState({
     projects_count: 0,
     users_count: 0,
@@ -148,9 +158,15 @@ function Home() {
             Istraži projekte <span>→</span>
           </Link>
 
-          <Link to="/prijava" className="secondary-button">
-            Postani član
-          </Link>
+          {currentUser ? (
+            <Link to="/dodaj-projekat" className="secondary-button">
+              Dodaj projekat
+            </Link>
+          ) : (
+            <Link to="/prijava" className="secondary-button">
+              Postani član
+            </Link>
+          )}
         </div>
 
         <div className="hero-stats">
