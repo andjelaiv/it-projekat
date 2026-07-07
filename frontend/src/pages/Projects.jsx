@@ -355,7 +355,11 @@ function Projects() {
             </div>
           </div>
 
-          {projects.length > 0 ? (
+          {loading ? (
+            <div className="empty-message">
+              Učitavanje projekata...
+            </div>
+          ) : projects.length > 0 ? (
             <div className="projects-grid projects-page-grid">
               {projects.map((project) => (
                 <ProjectCard key={project.id} project={project} />

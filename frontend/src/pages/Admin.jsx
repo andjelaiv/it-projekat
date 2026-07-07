@@ -52,7 +52,7 @@ function Admin() {
 
       setMessage(
         error.response?.data?.message ||
-          "Došlo je do greške pri učitavanju admin panela."
+        "Došlo je do greške pri učitavanju admin panela."
       );
     } finally {
       setLoading(false);
@@ -85,9 +85,9 @@ function Admin() {
         previousProjects.map((item) =>
           Number(item.id) === Number(project.id)
             ? {
-                ...item,
-                is_featured: newFeaturedValue,
-              }
+              ...item,
+              is_featured: newFeaturedValue,
+            }
             : item
         )
       );
@@ -102,7 +102,7 @@ function Admin() {
 
       setMessage(
         error.response?.data?.message ||
-          "Došlo je do greške pri izmjeni izdvojenog statusa."
+        "Došlo je do greške pri izmjeni izdvojenog statusa."
       );
     }
   };
@@ -145,7 +145,7 @@ function Admin() {
 
       setMessage(
         error.response?.data?.message ||
-          "Došlo je do greške pri brisanju projekta."
+        "Došlo je do greške pri brisanju projekta."
       );
     }
   };
@@ -165,13 +165,41 @@ function Admin() {
     try {
       await updateUserRole(user.id, newRoleId);
 
+      const currentUserId = Number(
+        currentUser?.id ||
+        currentUser?.user_id ||
+        currentUser?.userId
+      );
+
+      const changedUserId = Number(user.id);
+
+      const changingOwnRole =
+        currentUserId === changedUserId;
+
+      if (changingOwnRole) {
+        const updatedCurrentUser = {
+          ...currentUser,
+          role: newRoleName,
+        };
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedCurrentUser)
+        );
+
+        if (newRoleName !== "admin") {
+          window.location.replace("/404");
+          return;
+        }
+      }
+
       setUsers((previousUsers) =>
         previousUsers.map((item) =>
-          Number(item.id) === Number(user.id)
+          Number(item.id) === changedUserId
             ? {
-                ...item,
-                role: newRoleName,
-              }
+              ...item,
+              role: newRoleName,
+            }
             : item
         )
       );
@@ -184,7 +212,7 @@ function Admin() {
 
       setMessage(
         error.response?.data?.message ||
-          "Došlo je do greške pri promjeni role korisnika."
+        "Došlo je do greške pri promjeni role korisnika."
       );
     }
   };
@@ -201,9 +229,28 @@ function Admin() {
     try {
       await deleteUser(user.id);
 
+      const currentUserId = Number(
+        currentUser?.id ||
+        currentUser?.user_id ||
+        currentUser?.userId
+      );
+
+      const deletedUserId = Number(user.id);
+
+      const deletingOwnProfile =
+        currentUserId === deletedUserId;
+
+      if (deletingOwnProfile) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        window.location.replace("/registracija");
+        return;
+      }
+
       setUsers((previousUsers) =>
         previousUsers.filter(
-          (item) => Number(item.id) !== Number(user.id)
+          (item) => Number(item.id) !== deletedUserId
         )
       );
 
@@ -227,7 +274,7 @@ function Admin() {
 
       setMessage(
         error.response?.data?.message ||
-          "Došlo je do greške pri brisanju korisnika."
+        "Došlo je do greške pri brisanju korisnika."
       );
     }
   };
@@ -349,8 +396,8 @@ function Admin() {
                       <b>
                         {Number(project.average_rating) > 0
                           ? Number(
-                              project.average_rating
-                            ).toFixed(1)
+                            project.average_rating
+                          ).toFixed(1)
                           : "Nema ocjena"}
                       </b>{" "}
                       ({project.review_count} recenzije)
@@ -437,8 +484,8 @@ function Admin() {
                       Registrovan:{" "}
                       {user.created_at
                         ? new Date(
-                            user.created_at
-                          ).toLocaleDateString()
+                          user.created_at
+                        ).toLocaleDateString()
                         : "Nije poznato"}
                     </span>
                   </div>

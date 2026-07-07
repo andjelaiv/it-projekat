@@ -143,6 +143,27 @@ function ProjectDetails() {
     const fetchProjectDetails = async () => {
       setLoading(true);
 
+      setProject(null);
+      setReviews([]);
+      setProjectImages([]);
+      setSimilarProjects([]);
+
+      setActiveTab("pattern");
+
+      setNewReview({
+        rating: 0,
+        comment: "",
+      });
+
+      setHoverRating(0);
+      setReviewMessage("");
+      setSubmittingReview(false);
+
+      setIsFavorite(false);
+
+      setCollectionDropdownOpen(false);
+      setCollectionMessage("");
+
       await Promise.all([
         fetchProject(),
         fetchReviews(),
