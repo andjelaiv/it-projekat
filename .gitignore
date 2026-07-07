@@ -1,3 +1,4 @@
 node_modules/
 .env
 profili.txt
+backend/uploads/
