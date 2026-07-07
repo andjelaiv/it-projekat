@@ -1,12 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import {
+  deleteProject,
+  deleteUser,
+  getAdminStats,
+  getAdminUsers,
+  getProjects,
+  updateProjectFeatured,
+  updateUserRole,
+} from "../api";
+import { getImageUrl } from "../utils/imageUrl";
 import "./Admin.css";
 
 function Admin() {
   const navigate = useNavigate();
 
   const savedUser = localStorage.getItem("user");
+
   let currentUser = null;
 
   try {
@@ -15,103 +25,89 @@ function Admin() {
     currentUser = null;
   }
 
-  const token = localStorage.getItem("token");
-
   const [activeTab, setActiveTab] = useState("projects");
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const fetchAdminData = () => {
+  const fetchAdminData = async () => {
     setLoading(true);
     setMessage("");
 
-    Promise.all([
-      axios.get("http://localhost:5000/api/admin/stats", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      axios.get("http://localhost:5000/api/projects"),
-      axios.get("http://localhost:5000/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-    ])
-      .then(([statsResponse, projectsResponse, usersResponse]) => {
-        setStats(statsResponse.data);
-        setProjects(projectsResponse.data);
-        setUsers(usersResponse.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju admin panela:", error);
+    try {
+      const [statsData, projectsData, usersData] = await Promise.all([
+        getAdminStats(),
+        getProjects(),
+        getAdminUsers(),
+      ]);
 
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri učitavanju admin panela."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      setStats(statsData);
+      setProjects(projectsData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Greška pri učitavanju admin panela:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri učitavanju admin panela."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (!token || currentUser?.role !== "admin") {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
       navigate("/prijava-potrebna");
+      return;
+    }
+
+    if (currentUser?.role !== "admin") {
+      navigate("/404");
       return;
     }
 
     fetchAdminData();
   }, []);
 
-  const handleFeaturedToggle = (project) => {
+  const handleFeaturedToggle = async (project) => {
     const newFeaturedValue = project.is_featured === 1 ? 0 : 1;
 
-    axios
-      .put(
-        `http://localhost:5000/api/projects/${project.id}/featured`,
-        {
-          is_featured: newFeaturedValue,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
-        setProjects((previousProjects) =>
-          previousProjects.map((item) =>
-            item.id === project.id
-              ? {
-                  ...item,
-                  is_featured: newFeaturedValue,
-                }
-              : item
-          )
-        );
+    try {
+      await updateProjectFeatured(project.id, newFeaturedValue);
 
-        setMessage(
-          newFeaturedValue === 1
-            ? "Projekat je označen kao izdvojen."
-            : "Projekat više nije izdvojen."
-        );
-      })
-      .catch((error) => {
-        console.error("Greška pri izmjeni featured statusa:", error);
+      setProjects((previousProjects) =>
+        previousProjects.map((item) =>
+          Number(item.id) === Number(project.id)
+            ? {
+                ...item,
+                is_featured: newFeaturedValue,
+              }
+            : item
+        )
+      );
 
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri izmjeni izdvojenog statusa."
-        );
-      });
+      setMessage(
+        newFeaturedValue === 1
+          ? "Projekat je označen kao izdvojen."
+          : "Projekat više nije izdvojen."
+      );
+    } catch (error) {
+      console.error("Greška pri izmjeni featured statusa:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri izmjeni izdvojenog statusa."
+      );
+    }
   };
 
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = async (projectId) => {
     const confirmDelete = window.confirm(
       "Da li sigurno želiš da obrišeš ovaj projekat?"
     );
@@ -120,30 +116,41 @@ function Admin() {
       return;
     }
 
-    axios
-      .delete(`http://localhost:5000/api/projects/${projectId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        setProjects((previousProjects) =>
-          previousProjects.filter((project) => project.id !== projectId)
-        );
+    try {
+      await deleteProject(projectId);
 
-        setMessage("Projekat je uspješno obrisan.");
-      })
-      .catch((error) => {
-        console.error("Greška pri brisanju projekta:", error);
+      setProjects((previousProjects) =>
+        previousProjects.filter(
+          (project) => Number(project.id) !== Number(projectId)
+        )
+      );
 
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri brisanju projekta."
-        );
+      setStats((previousStats) => {
+        if (!previousStats) {
+          return previousStats;
+        }
+
+        return {
+          ...previousStats,
+          projects_count: Math.max(
+            0,
+            Number(previousStats.projects_count) - 1
+          ),
+        };
       });
+
+      setMessage("Projekat je uspješno obrisan.");
+    } catch (error) {
+      console.error("Greška pri brisanju projekta:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri brisanju projekta."
+      );
+    }
   };
 
-  const handleRoleChange = (user) => {
+  const handleRoleChange = async (user) => {
     const newRoleId = user.role === "admin" ? 2 : 1;
     const newRoleName = user.role === "admin" ? "user" : "admin";
 
@@ -155,43 +162,34 @@ function Admin() {
       return;
     }
 
-    axios
-      .put(
-        `http://localhost:5000/api/admin/users/${user.id}/role`,
-        {
-          role_id: newRoleId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
-        setUsers((previousUsers) =>
-          previousUsers.map((item) =>
-            item.id === user.id
-              ? {
-                  ...item,
-                  role: newRoleName,
-                }
-              : item
-          )
-        );
+    try {
+      await updateUserRole(user.id, newRoleId);
 
-        setMessage(`Rola korisnika @${user.username} je promijenjena.`);
-      })
-      .catch((error) => {
-        console.error("Greška pri promjeni role:", error);
+      setUsers((previousUsers) =>
+        previousUsers.map((item) =>
+          Number(item.id) === Number(user.id)
+            ? {
+                ...item,
+                role: newRoleName,
+              }
+            : item
+        )
+      );
 
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri promjeni role korisnika."
-        );
-      });
+      setMessage(
+        `Rola korisnika @${user.username} je promijenjena.`
+      );
+    } catch (error) {
+      console.error("Greška pri promjeni role:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri promjeni role korisnika."
+      );
+    }
   };
 
-  const handleDeleteUser = (user) => {
+  const handleDeleteUser = async (user) => {
     const confirmDelete = window.confirm(
       `Da li sigurno želiš da obrišeš korisnika @${user.username}?`
     );
@@ -200,45 +198,46 @@ function Admin() {
       return;
     }
 
-    axios
-      .delete(`http://localhost:5000/api/admin/users/${user.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        setUsers((previousUsers) =>
-          previousUsers.filter((item) => item.id !== user.id)
-        );
+    try {
+      await deleteUser(user.id);
 
-        setMessage(`Korisnik @${user.username} je obrisan.`);
-      })
-      .catch((error) => {
-        console.error("Greška pri brisanju korisnika:", error);
+      setUsers((previousUsers) =>
+        previousUsers.filter(
+          (item) => Number(item.id) !== Number(user.id)
+        )
+      );
 
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri brisanju korisnika."
-        );
+      setStats((previousStats) => {
+        if (!previousStats) {
+          return previousStats;
+        }
+
+        return {
+          ...previousStats,
+          users_count: Math.max(
+            0,
+            Number(previousStats.users_count) - 1
+          ),
+        };
       });
-  };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return null;
+      setMessage(`Korisnik @${user.username} je obrisan.`);
+    } catch (error) {
+      console.error("Greška pri brisanju korisnika:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri brisanju korisnika."
+      );
     }
-
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-
-    return `http://localhost:5000${imagePath}`;
   };
 
   if (loading) {
     return (
       <section className="admin-page">
-        <div className="admin-message">Učitavanje admin panela...</div>
+        <div className="admin-message">
+          Učitavanje admin panela...
+        </div>
       </section>
     );
   }
@@ -314,10 +313,16 @@ function Admin() {
               const imageUrl = getImageUrl(project.cover_image);
 
               return (
-                <article className="admin-project-card" key={project.id}>
+                <article
+                  className="admin-project-card"
+                  key={project.id}
+                >
                   <div className="admin-project-image">
                     {imageUrl ? (
-                      <img src={imageUrl} alt={project.title} />
+                      <img
+                        src={imageUrl}
+                        alt={project.title}
+                      />
                     ) : (
                       <span>Nema slike</span>
                     )}
@@ -343,7 +348,9 @@ function Admin() {
                       Ocjena:{" "}
                       <b>
                         {Number(project.average_rating) > 0
-                          ? Number(project.average_rating).toFixed(1)
+                          ? Number(
+                              project.average_rating
+                            ).toFixed(1)
                           : "Nema ocjena"}
                       </b>{" "}
                       ({project.review_count} recenzije)
@@ -353,7 +360,9 @@ function Admin() {
                   <div className="admin-project-actions">
                     <button
                       type="button"
-                      onClick={() => handleFeaturedToggle(project)}
+                      onClick={() =>
+                        handleFeaturedToggle(project)
+                      }
                     >
                       {project.is_featured === 1
                         ? "Skini izdvojeno"
@@ -362,14 +371,20 @@ function Admin() {
 
                     <button
                       type="button"
-                      onClick={() => navigate(`/projekti/${project.id}`)}
+                      onClick={() =>
+                        navigate(`/projekti/${project.id}`)
+                      }
                     >
                       Otvori
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => navigate(`/uredi-projekat/${project.id}`)}
+                      onClick={() =>
+                        navigate(
+                          `/uredi-projekat/${project.id}`
+                        )
+                      }
                     >
                       Uredi
                     </button>
@@ -377,7 +392,9 @@ function Admin() {
                     <button
                       type="button"
                       className="admin-delete-button"
-                      onClick={() => handleDeleteProject(project.id)}
+                      onClick={() =>
+                        handleDeleteProject(project.id)
+                      }
                     >
                       Obriši
                     </button>
@@ -400,7 +417,10 @@ function Admin() {
 
           <div className="admin-users-list">
             {users.map((user) => (
-              <article className="admin-user-card" key={user.id}>
+              <article
+                className="admin-user-card"
+                key={user.id}
+              >
                 <div className="admin-user-avatar">
                   {user.username?.charAt(0).toUpperCase() || "K"}
                 </div>
@@ -412,17 +432,23 @@ function Admin() {
 
                   <div className="admin-user-meta">
                     <span>{user.role}</span>
+
                     <span>
                       Registrovan:{" "}
                       {user.created_at
-                        ? new Date(user.created_at).toLocaleDateString()
+                        ? new Date(
+                            user.created_at
+                          ).toLocaleDateString()
                         : "Nije poznato"}
                     </span>
                   </div>
                 </div>
 
                 <div className="admin-user-actions">
-                  <button type="button" onClick={() => handleRoleChange(user)}>
+                  <button
+                    type="button"
+                    onClick={() => handleRoleChange(user)}
+                  >
                     {user.role === "admin"
                       ? "Promijeni u user"
                       : "Promijeni u admin"}

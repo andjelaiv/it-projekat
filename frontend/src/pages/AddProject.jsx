@@ -1,355 +1,426 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import {
+  createProject,
+  getCategories,
+  getDifficultyLevels,
+  getMaterials,
+  getTags,
+  uploadProjectCover,
+  uploadProjectImages,
+} from "../api";
 import "./AddProject.css";
 
 function AddProject() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [categories, setCategories] = useState([]);
-    const [difficultyLevels, setDifficultyLevels] = useState([]);
-    const [materials, setMaterials] = useState([]);
-    const [tags, setTags] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [difficultyLevels, setDifficultyLevels] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [tags, setTags] = useState([]);
 
-    const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        estimated_time: "",
-        pattern_text: "",
-        category_id: "",
-        difficulty_id: "",
-        material_ids: [],
-        tag_ids: [],
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    estimated_time: "",
+    pattern_text: "",
+    category_id: "",
+    difficulty_id: "",
+    material_ids: [],
+    tag_ids: [],
+  });
+
+  const [coverImage, setCoverImage] = useState(null);
+  const [processImages, setProcessImages] = useState([]);
+
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchFormOptions = async () => {
+      try {
+        const [
+          categoriesData,
+          difficultyData,
+          materialsData,
+          tagsData,
+        ] = await Promise.all([
+          getCategories(),
+          getDifficultyLevels(),
+          getMaterials(),
+          getTags(),
+        ]);
+
+        setCategories(categoriesData);
+        setDifficultyLevels(difficultyData);
+        setMaterials(materialsData);
+        setTags(tagsData);
+      } catch (error) {
+        console.error(
+          "Greška pri učitavanju podataka forme:",
+          error
+        );
+
+        setMessage(
+          "Došlo je do greške pri učitavanju podataka forme."
+        );
+      }
+    };
+
+    fetchFormOptions();
+  }, []);
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((previousData) => ({
+      ...previousData,
+      [name]: value,
+    }));
+  };
+
+  const handleCheckboxChange = (event, fieldName) => {
+    const value = Number(event.target.value);
+    const checked = event.target.checked;
+
+    setFormData((previousData) => {
+      if (checked) {
+        return {
+          ...previousData,
+          [fieldName]: [
+            ...previousData[fieldName],
+            value,
+          ],
+        };
+      }
+
+      return {
+        ...previousData,
+        [fieldName]: previousData[fieldName].filter(
+          (id) => id !== value
+        ),
+      };
     });
+  };
 
-    const [coverImage, setCoverImage] = useState(null);
-    const [processImages, setProcessImages] = useState([]);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    const [message, setMessage] = useState("");
-    const [submitting, setSubmitting] = useState(false);
+    const token = localStorage.getItem("token");
 
-    useEffect(() => {
-        axios
-            .get("http://localhost:5000/api/categories")
-            .then((response) => setCategories(response.data))
-            .catch((error) => console.error("Greška pri učitavanju kategorija:", error));
+    if (!token) {
+      navigate("/prijava-potrebna");
+      return;
+    }
 
-        axios
-            .get("http://localhost:5000/api/difficulty-levels")
-            .then((response) => setDifficultyLevels(response.data))
-            .catch((error) => console.error("Greška pri učitavanju težina:", error));
+    if (
+      !formData.title ||
+      !formData.description ||
+      !formData.category_id ||
+      !formData.difficulty_id ||
+      !formData.pattern_text
+    ) {
+      setMessage(
+        "Popuni naziv, opis, kategoriju i nivo težine."
+      );
+      return;
+    }
 
-        axios
-            .get("http://localhost:5000/api/materials")
-            .then((response) => setMaterials(response.data))
-            .catch((error) => console.error("Greška pri učitavanju materijala:", error));
+    try {
+      setSubmitting(true);
+      setMessage("");
 
-        axios
-            .get("http://localhost:5000/api/tags")
-            .then((response) => setTags(response.data))
-            .catch((error) => console.error("Greška pri učitavanju tagova:", error));
-    }, []);
+      const projectData = {
+        title: formData.title,
+        description: formData.description,
+        estimated_time: formData.estimated_time,
+        pattern_text: formData.pattern_text,
+        category_id: Number(formData.category_id),
+        difficulty_id: Number(formData.difficulty_id),
+        material_ids: formData.material_ids,
+        tag_ids: formData.tag_ids,
+      };
 
-    const handleInputChange = (event) => {
-        const { name, value } = event.target;
+      const createdProject = await createProject(projectData);
 
-        setFormData((previousData) => ({
-            ...previousData,
-            [name]: value,
-        }));
-    };
+      const newProjectId =
+        createdProject.projectId ||
+        createdProject.id ||
+        createdProject.project_id ||
+        createdProject.insertId;
 
-    const handleCheckboxChange = (event, fieldName) => {
-        const value = Number(event.target.value);
-        const checked = event.target.checked;
+      if (!newProjectId) {
+        throw new Error(
+          "Backend nije vratio ID novog projekta."
+        );
+      }
 
-        setFormData((previousData) => {
-            if (checked) {
-                return {
-                    ...previousData,
-                    [fieldName]: [...previousData[fieldName], value],
-                };
-            }
+      if (coverImage) {
+        await uploadProjectCover(
+          newProjectId,
+          coverImage
+        );
+      }
 
-            return {
-                ...previousData,
-                [fieldName]: previousData[fieldName].filter((id) => id !== value),
-            };
-        });
-    };
+      if (processImages.length > 0) {
+        await uploadProjectImages(
+          newProjectId,
+          processImages,
+          "progress"
+        );
+      }
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+      setMessage("Projekat je uspješno dodat ✿");
 
-        const token = localStorage.getItem("token");
+      setTimeout(() => {
+        navigate(`/projekti/${newProjectId}`);
+      }, 900);
+    } catch (error) {
+      console.error(
+        "Greška pri dodavanju projekta:",
+        error
+      );
 
-        if (!token) {
-            navigate("/prijava-potrebna");
-            return;
-        }
+      setMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Došlo je do greške pri dodavanju projekta."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-        if (!formData.title || !formData.description || !formData.category_id || !formData.difficulty_id) {
-            setMessage("Popuni naziv, opis, kategoriju i nivo težine.");
-            return;
-        }
+  return (
+    <section className="add-project-page">
+      <div className="add-project-header">
+        <span>🧶</span>
 
-        try {
-            setSubmitting(true);
-            setMessage("");
+        <div>
+          <p>Novi heklani projekat</p>
+          <h1>Dodaj projekat</h1>
+        </div>
+      </div>
 
-            const projectResponse = await axios.post(
-                "http://localhost:5000/api/projects",
-                {
-                    title: formData.title,
-                    description: formData.description,
-                    estimated_time: formData.estimated_time,
-                    pattern_text: formData.pattern_text,
-                    category_id: Number(formData.category_id),
-                    difficulty_id: Number(formData.difficulty_id),
-                    material_ids: formData.material_ids,
-                    tag_ids: formData.tag_ids,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+      <form
+        className="add-project-form"
+        onSubmit={handleSubmit}
+      >
+        <div className="form-grid">
+          <label>
+            Naziv projekta *
+            <input
+              type="text"
+              name="title"
+              placeholder="npr. Crochet Bunny"
+              value={formData.title}
+              onChange={handleInputChange}
+            />
+          </label>
 
-            const newProjectId =
-                projectResponse.data.projectId ||
-                projectResponse.data.id ||
-                projectResponse.data.project_id ||
-                projectResponse.data.insertId;
+          <label>
+            Vrijeme izrade
+            <input
+              type="text"
+              name="estimated_time"
+              placeholder="npr. 2 hours"
+              value={formData.estimated_time}
+              onChange={handleInputChange}
+            />
+          </label>
 
-            if (!newProjectId) {
-                throw new Error("Backend nije vratio ID novog projekta.");
-            }
+          <label>
+            Kategorija *
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleInputChange}
+            >
+              <option value="">
+                Izaberi kategoriju
+              </option>
 
-            if (coverImage) {
-                const coverFormData = new FormData();
-                coverFormData.append("cover", coverImage);
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-                await axios.post(
-                    `http://localhost:5000/api/projects/${newProjectId}/cover`,
-                    coverFormData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "multipart/form-data",
-                        },
-                    }
-                );
-            }
+          <label>
+            Nivo težine *
+            <select
+              name="difficulty_id"
+              value={formData.difficulty_id}
+              onChange={handleInputChange}
+            >
+              <option value="">Izaberi nivo</option>
 
-            if (processImages.length > 0) {
-                const imagesFormData = new FormData();
+              {difficultyLevels.map((level) => (
+                <option
+                  key={level.id}
+                  value={level.id}
+                >
+                  {level.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-                processImages.forEach((image) => {
-                    imagesFormData.append("images", image);
-                });
+        <label>
+          Opis projekta *
+          <textarea
+            name="description"
+            placeholder="Kratko opiši projekat..."
+            value={formData.description}
+            onChange={handleInputChange}
+          ></textarea>
+        </label>
 
-                imagesFormData.append("image_type", "progress");
+        <label>
+          Pattern / uputstvo
+          <textarea
+            name="pattern_text"
+            placeholder="Unesi uputstvo, redove, napomene..."
+            value={formData.pattern_text}
+            onChange={handleInputChange}
+          ></textarea>
+        </label>
 
-                await axios.post(
-                    `http://localhost:5000/api/projects/${newProjectId}/images`,
-                    imagesFormData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "multipart/form-data",
-                        },
-                    }
-                );
-            }
+        <div className="checkbox-section">
+          <h2>Materijali</h2>
 
-            setMessage("Projekat je uspješno dodat ✿");
+          <div className="checkbox-list">
+            {materials.map((material) => (
+              <label
+                key={material.id}
+                className="checkbox-pill"
+              >
+                <input
+                  type="checkbox"
+                  value={material.id}
+                  checked={formData.material_ids.includes(
+                    material.id
+                  )}
+                  onChange={(event) =>
+                    handleCheckboxChange(
+                      event,
+                      "material_ids"
+                    )
+                  }
+                />
 
-            setTimeout(() => {
-                navigate(`/projekti/${newProjectId}`);
-            }, 900);
-        } catch (error) {
-            console.error("Greška pri dodavanju projekta:", error);
-            setMessage(
-                error.response?.data?.message ||
-                "Došlo je do greške pri dodavanju projekta."
-            );
-        } finally {
-            setSubmitting(false);
-        }
-    };
+                <span>{material.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-    return (
-        <section className="add-project-page">
-            <div className="add-project-header">
-                <span>🧶</span>
+        <div className="checkbox-section">
+          <h2>Tagovi</h2>
 
-                <div>
-                    <p>Novi heklani projekat</p>
-                    <h1>Dodaj projekat</h1>
-                </div>
-            </div>
+          <div className="checkbox-list">
+            {tags.map((tag) => (
+              <label
+                key={tag.id}
+                className="checkbox-pill"
+              >
+                <input
+                  type="checkbox"
+                  value={tag.id}
+                  checked={formData.tag_ids.includes(
+                    tag.id
+                  )}
+                  onChange={(event) =>
+                    handleCheckboxChange(
+                      event,
+                      "tag_ids"
+                    )
+                  }
+                />
 
-            <form className="add-project-form" onSubmit={handleSubmit}>
-                <div className="form-grid">
-                    <label>
-                        Naziv projekta *
-                        <input
-                            type="text"
-                            name="title"
-                            placeholder="npr. Crochet Bunny"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                        />
-                    </label>
+                <span>{tag.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-                    <label>
-                        Vrijeme izrade
-                        <input
-                            type="text"
-                            name="estimated_time"
-                            placeholder="npr. 2 hours"
-                            value={formData.estimated_time}
-                            onChange={handleInputChange}
-                        />
-                    </label>
+        <div className="upload-grid">
+          <label className="upload-box">
+            <span>Cover slika</span>
 
-                    <label>
-                        Kategorija *
-                        <select
-                            name="category_id"
-                            value={formData.category_id}
-                            onChange={handleInputChange}
-                        >
-                            <option value="">Izaberi kategoriju</option>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) =>
+                setCoverImage(
+                  event.target.files[0] || null
+                )
+              }
+            />
 
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+            <small>
+              {coverImage
+                ? coverImage.name
+                : "Izaberi glavnu sliku"}
+            </small>
+          </label>
 
-                    <label>
-                        Nivo težine *
-                        <select
-                            name="difficulty_id"
-                            value={formData.difficulty_id}
-                            onChange={handleInputChange}
-                        >
-                            <option value="">Izaberi nivo</option>
+          <label className="upload-box">
+            <span>Process slike</span>
 
-                            {difficultyLevels.map((level) => (
-                                <option key={level.id} value={level.id}>
-                                    {level.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) =>
+                setProcessImages(
+                  Array.from(
+                    event.target.files
+                  ).slice(0, 4)
+                )
+              }
+            />
 
-                <label>
-                    Opis projekta *
-                    <textarea
-                        name="description"
-                        placeholder="Kratko opiši projekat..."
-                        value={formData.description}
-                        onChange={handleInputChange}
-                    ></textarea>
-                </label>
+            <small>
+              {processImages.length > 0
+                ? `${processImages.length} slike izabrane`
+                : "Izaberi do 4 slike za galeriju"}
+            </small>
+          </label>
+        </div>
 
-                <label>
-                    Pattern / uputstvo
-                    <textarea
-                        name="pattern_text"
-                        placeholder="Unesi uputstvo, redove, napomene..."
-                        value={formData.pattern_text}
-                        onChange={handleInputChange}
-                    ></textarea>
-                </label>
+        {message && (
+          <p className="add-project-message">
+            {message}
+          </p>
+        )}
 
-                <div className="checkbox-section">
-                    <h2>Materijali</h2>
+        <div className="add-project-actions">
+          <button
+            type="button"
+            onClick={() => navigate("/projekti")}
+          >
+            Odustani
+          </button>
 
-                    <div className="checkbox-list">
-                        {materials.map((material) => (
-                            <label key={material.id} className="checkbox-pill">
-                                <input
-                                    type="checkbox"
-                                    value={material.id}
-                                    checked={formData.material_ids.includes(material.id)}
-                                    onChange={(event) =>
-                                        handleCheckboxChange(event, "material_ids")
-                                    }
-                                />
-                                <span>{material.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="checkbox-section">
-                    <h2>Tagovi</h2>
-
-                    <div className="checkbox-list">
-                        {tags.map((tag) => (
-                            <label key={tag.id} className="checkbox-pill">
-                                <input
-                                    type="checkbox"
-                                    value={tag.id}
-                                    checked={formData.tag_ids.includes(tag.id)}
-                                    onChange={(event) => handleCheckboxChange(event, "tag_ids")}
-                                />
-                                <span>{tag.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="upload-grid">
-                    <label className="upload-box">
-                        <span>Cover slika</span>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(event) => setCoverImage(event.target.files[0])}
-                        />
-                        <small>{coverImage ? coverImage.name : "Izaberi glavnu sliku"}</small>
-                    </label>
-
-                    <label className="upload-box">
-                        <span>Process slike</span>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(event) =>
-                                setProcessImages(Array.from(event.target.files).slice(0, 4))
-                            }
-                        />
-                        <small>
-                            {processImages.length > 0
-                                ? `${processImages.length} slike izabrane`
-                                : "Izaberi do 4 slike za galeriju"}
-                        </small>
-                    </label>
-                </div>
-
-                {message && <p className="add-project-message">{message}</p>}
-
-                <div className="add-project-actions">
-                    <button type="button" onClick={() => navigate("/projekti")}>
-                        Odustani
-                    </button>
-
-                    <button type="submit" disabled={submitting}>
-                        {submitting ? "Čuva se..." : "Sačuvaj projekat ✿"}
-                    </button>
-                </div>
-            </form>
-        </section>
-    );
+          <button
+            type="submit"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Čuva se..."
+              : "Sačuvaj projekat ✿"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 }
 
 export default AddProject;

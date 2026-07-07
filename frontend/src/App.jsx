@@ -1,6 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import ScrollToTop from "./components/ScrollToTop";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import Home from "./pages/Home";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
@@ -12,7 +14,6 @@ import AddProject from "./pages/AddProject";
 import EditProject from "./pages/EditProject";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
-import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -20,16 +21,35 @@ function App() {
     <>
       <ScrollToTop />
       <Header />
-
       <main>
         <Routes>
+          {/* JAVNE RUTE */}
           <Route path="/" element={<Home />} />
           <Route path="/projekti" element={<Projects />} />
           <Route path="/projekti/:id" element={<ProjectDetails />} />
-          <Route path="/moja-kolekcija" element={<Collection />} />
-          <Route path="/favoriti" element={<Favorites />} />
           <Route path="/prijava" element={<Auth />} />
-          <Route path="/prijava-potrebna" element={<LoginRequired />} />
+          <Route
+            path="/prijava-potrebna"
+            element={<LoginRequired />}
+          />
+          <Route path="/profil/:id" element={<Profile />} />
+          {/* RUTE ZA PRIJAVLJENE KORISNIKE */}
+          <Route
+            path="/favoriti"
+            element={
+              <ProtectedRoute>
+                <Favorites />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/moja-kolekcija"
+            element={
+              <ProtectedRoute>
+                <Collection />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dodaj-projekat"
             element={
@@ -38,7 +58,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/uredi-projekat/:id"
             element={
@@ -47,16 +66,16 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          <Route 
-            path="/admin" 
+          {/* ADMIN RUTA */}
+          <Route
+            path="/admin"
             element={
               <ProtectedRoute adminOnly={true}>
                 <Admin />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route path="/profil/:id" element={<Profile />} />
+          {/* NEPOSTOJEĆA RUTA */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

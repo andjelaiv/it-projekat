@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import { getMyFavorites, removeFavorite } from "../api";
 import "./Favorites.css";
 
 function Favorites() {
@@ -11,9 +11,9 @@ function Favorites() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  const token = localStorage.getItem("token");
+  const fetchFavorites = async () => {
+    const token = localStorage.getItem("token");
 
-  const fetchFavorites = () => {
     if (!token) {
       navigate("/prijava-potrebna");
       return;
@@ -21,43 +21,36 @@ function Favorites() {
 
     setLoading(true);
 
-    axios
-      .get("http://localhost:5000/api/favorites/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        setFavorites(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju favorita:", error);
-        setMessage("Došlo je do greške pri učitavanju favorita.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const data = await getMyFavorites();
+      setFavorites(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju favorita:", error);
+      setMessage("Došlo je do greške pri učitavanju favorita.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchFavorites();
   }, []);
 
-  const handleRemoveFavorite = (projectId) => {
-    axios
-      .delete(`http://localhost:5000/api/favorites/${projectId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        setMessage("Projekat je uklonjen iz favorita.");
-        fetchFavorites();
-      })
-      .catch((error) => {
-        console.error("Greška pri uklanjanju favorita:", error);
-        setMessage("Došlo je do greške pri uklanjanju favorita.");
-      });
+  const handleRemoveFavorite = async (projectId) => {
+    try {
+      await removeFavorite(projectId);
+
+      setMessage("Projekat je uklonjen iz favorita.");
+
+      setFavorites((previousFavorites) =>
+        previousFavorites.filter(
+          (project) => Number(project.id) !== Number(projectId)
+        )
+      );
+    } catch (error) {
+      console.error("Greška pri uklanjanju favorita:", error);
+      setMessage("Došlo je do greške pri uklanjanju favorita.");
+    }
   };
 
   if (loading) {

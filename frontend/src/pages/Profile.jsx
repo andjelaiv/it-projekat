@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import {
+  getUserById,
+  getUserCollection,
+  getUserFavorites,
+  getUserProjects,
+} from "../api";
 import "./Profile.css";
 
 function Profile() {
@@ -11,24 +16,30 @@ function Profile() {
   const [projects, setProjects] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [collection, setCollection] = useState([]);
+
   const [activeTab, setActiveTab] = useState("projects");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    setMessage("");
+    const fetchProfile = async () => {
+      setLoading(true);
+      setMessage("");
 
-    Promise.all([
-      axios.get(`http://localhost:5000/api/users/${id}`),
-      axios.get(`http://localhost:5000/api/users/${id}/projects`),
-      axios.get(`http://localhost:5000/api/users/${id}/favorites`),
-      axios.get(`http://localhost:5000/api/users/${id}/collection`),
-    ])
-      .then(([userResponse, projectsResponse, favoritesResponse, collectionResponse]) => {
-        const userData = userResponse.data;
+      try {
+        const [
+          userData,
+          projectsData,
+          favoritesData,
+          collectionData,
+        ] = await Promise.all([
+          getUserById(id),
+          getUserProjects(id),
+          getUserFavorites(id),
+          getUserCollection(id),
+        ]);
 
-        const projectsWithAuthor = projectsResponse.data.map((project) => ({
+        const projectsWithAuthor = projectsData.map((project) => ({
           ...project,
           author: project.author || userData.username,
           author_id: project.author_id || userData.id,
@@ -36,19 +47,21 @@ function Profile() {
 
         setProfileUser(userData);
         setProjects(projectsWithAuthor);
-        setFavorites(favoritesResponse.data);
-        setCollection(collectionResponse.data);
-      })
-      .catch((error) => {
+        setFavorites(favoritesData);
+        setCollection(collectionData);
+      } catch (error) {
         console.error("Greška pri učitavanju profila:", error);
+
         setMessage(
           error.response?.data?.message ||
-          "Došlo je do greške pri učitavanju profila."
+            "Došlo je do greške pri učitavanju profila."
         );
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchProfile();
   }, [id]);
 
   const getCollectionStatusLabel = (statusName) => {

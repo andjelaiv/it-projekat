@@ -4,20 +4,20 @@ function ProtectedRoute({ children, adminOnly = false }) {
   const token = localStorage.getItem("token");
   const savedUser = localStorage.getItem("user");
 
-  let user = null;
+  let currentUser = null;
 
   try {
-    user = savedUser ? JSON.parse(savedUser) : null;
+    currentUser = savedUser ? JSON.parse(savedUser) : null;
   } catch {
-    user = null;
+    currentUser = null;
   }
 
-  if (!token || !user) {
+  if (!token) {
     return <Navigate to="/prijava-potrebna" replace />;
   }
 
-  if (adminOnly && user.role !== "admin") {
-    return <Navigate to="/prijava-potrebna" replace />;
+  if (adminOnly && currentUser?.role !== "admin") {
+    return <Navigate to="/404" replace />;
   }
 
   return children;

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import {
+  getMyCollection,
+  removeFromCollection,
+  updateCollectionStatus,
+} from "../api";
 import "./Collection.css";
 
 const statusGroups = [
@@ -44,9 +48,9 @@ function Collection() {
   const [message, setMessage] = useState("");
   const [openStatusMenu, setOpenStatusMenu] = useState(null);
 
-  const token = localStorage.getItem("token");
+  const fetchCollection = async () => {
+    const token = localStorage.getItem("token");
 
-  const fetchCollection = () => {
     if (!token) {
       navigate("/prijava-potrebna");
       return;
@@ -54,29 +58,22 @@ function Collection() {
 
     setLoading(true);
 
-    axios
-      .get("http://localhost:5000/api/collection/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        setCollection(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju kolekcije:", error);
-        setMessage("Došlo je do greške pri učitavanju kolekcije.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const data = await getMyCollection();
+      setCollection(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju kolekcije:", error);
+      setMessage("Došlo je do greške pri učitavanju kolekcije.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchCollection();
   }, []);
 
-  const handleRemoveFromCollection = (projectId) => {
+  const handleRemoveFromCollection = async (projectId) => {
     const confirmRemove = window.confirm(
       "Da li sigurno želiš da ukloniš ovaj projekat iz kolekcije?"
     );
@@ -85,44 +82,53 @@ function Collection() {
       return;
     }
 
-    axios
-      .delete(`http://localhost:5000/api/collection/${projectId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        setMessage("Projekat je uklonjen iz kolekcije.");
-        fetchCollection();
-      })
-      .catch((error) => {
-        console.error("Greška pri uklanjanju iz kolekcije:", error);
-        setMessage("Došlo je do greške pri uklanjanju iz kolekcije.");
-      });
+    try {
+      await removeFromCollection(projectId);
+
+      setMessage("Projekat je uklonjen iz kolekcije.");
+
+      setCollection((previousCollection) =>
+        previousCollection.filter(
+          (project) => Number(project.id) !== Number(projectId)
+        )
+      );
+    } catch (error) {
+      console.error("Greška pri uklanjanju iz kolekcije:", error);
+      setMessage("Došlo je do greške pri uklanjanju iz kolekcije.");
+    }
   };
 
-  const handleStatusChange = (projectId, statusId, statusTitle) => {
-    axios
-      .put(
-        `http://localhost:5000/api/collection/${projectId}`,
-        {
-          status_id: statusId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
-        setOpenStatusMenu(null);
-        setMessage(`Status je promijenjen u: ${statusTitle}.`);
-        fetchCollection();
-      })
-      .catch((error) => {
-        console.error("Greška pri promjeni statusa:", error);
-        setMessage("Došlo je do greške pri promjeni statusa.");
-      });
+  const handleStatusChange = async (
+    projectId,
+    statusId,
+    statusTitle,
+    statusKey
+  ) => {
+    try {
+      await updateCollectionStatus(projectId, statusId);
+
+      setOpenStatusMenu(null);
+      setMessage(`Status je promijenjen u: ${statusTitle}.`);
+
+      setCollection((previousCollection) =>
+        previousCollection.map((project) => {
+          if (Number(project.id) === Number(projectId)) {
+            return {
+              ...project,
+              status: statusKey,
+              status_name: statusKey,
+              collection_status: statusKey,
+              collection_status_name: statusKey,
+            };
+          }
+
+          return project;
+        })
+      );
+    } catch (error) {
+      console.error("Greška pri promjeni statusa:", error);
+      setMessage("Došlo je do greške pri promjeni statusa.");
+    }
   };
 
   const getProjectsByStatus = (statusKey) => {
@@ -132,7 +138,9 @@ function Collection() {
   if (loading) {
     return (
       <section className="collection-page">
-        <div className="collection-message-card">Učitavanje kolekcije...</div>
+        <div className="collection-message-card">
+          Učitavanje kolekcije...
+        </div>
       </section>
     );
   }
@@ -177,6 +185,7 @@ function Collection() {
 
                   <div>
                     <h2>{group.title}</h2>
+
                     <p>
                       {projects.length}{" "}
                       {projects.length === 1 ? "projekat" : "projekta"}
@@ -219,7 +228,8 @@ function Collection() {
                                       handleStatusChange(
                                         project.id,
                                         status.id,
-                                        status.title
+                                        status.title,
+                                        status.key
                                       )
                                     }
                                   >

@@ -107,14 +107,15 @@
   padding: 38px;
   box-shadow: 14px 14px 0 var(--tangerine);
   position: relative;
-  overflow: hidden;
+  z-index: 5;
+  overflow: visible;
 }
 
 .details-info-card::before {
   content: "";
   position: absolute;
-  left: -8px;
-  right: -8px;
+  left: 0px;
+  right: 0px;
   top: 132px;
   height: 68px;
   background:
@@ -734,8 +735,44 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
-
 @media (max-width: 700px) {
+  .project-details-page {
+    min-height: calc(100vh - 76px);
+    padding: 38px 18px 64px;
+  }
+
+  .details-info-card,
+  .details-box,
+  .details-tab-content {
+    padding: 24px;
+    border-radius: 30px;
+  }
+
+  .details-info-card h1 {
+    font-size: clamp(44px, 14vw, 64px);
+  }
+
+  .details-small-info,
+  .details-section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-tabs {
+    width: 100%;
+    border-radius: 28px;
+    flex-direction: column;
+  }
+
+  .details-tabs button {
+    width: 100%;
+  }
+
+  .details-image-card,
+  .details-image-card img,
+  .details-image-placeholder {
+    min-height: 320px;
+  }
+
   .review-form {
     padding: 26px 18px;
   }
@@ -777,45 +814,6 @@
     min-height: 420px;
   }
 }
-
-@media (max-width: 700px) {
-  .project-details-page {
-    min-height: calc(100vh - 76px);
-    padding: 38px 18px 64px;
-  }
-
-  .details-info-card,
-  .details-box,
-  .details-tab-content {
-    padding: 24px;
-    border-radius: 30px;
-  }
-
-  .details-info-card h1 {
-    font-size: clamp(44px, 14vw, 64px);
-  }
-
-  .details-small-info,
-  .details-section-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .details-tabs {
-    width: 100%;
-    border-radius: 28px;
-    flex-direction: column;
-  }
-
-  .details-tabs button {
-    width: 100%;
-  }
-
-  .details-image-card,
-  .details-image-card img,
-  .details-image-placeholder {
-    min-height: 320px;
-  }
-}
 .review-actions {
   display: flex;
   align-items: center;
@@ -850,6 +848,7 @@
 }
 .collection-dropdown {
   position: relative;
+  z-index: 50;
   width: fit-content;
 }
 
@@ -865,7 +864,7 @@
   box-shadow: 7px 7px 0 var(--dark);
   display: grid;
   gap: 8px;
-  z-index: 30;
+  z-index: 999;
 }
 
 .collection-dropdown-menu button {
@@ -917,23 +916,8 @@
   box-shadow: 4px 4px 0 var(--dark);
 }
 .project-details-layout,
-.details-info-card,
 .details-actions {
   overflow: visible;
-}
-
-.details-info-card {
-  position: relative;
-  z-index: 5;
-}
-
-.collection-dropdown {
-  position: relative;
-  z-index: 50;
-}
-
-.collection-dropdown-menu {
-  z-index: 999;
 }
 .project-process-gallery {
   margin-top: 42px;
@@ -1038,11 +1022,7 @@
     grid-template-columns: 1fr;
   }
 }
-/* Mala korekcija talasa na details kartici */
-.details-info-card::before {
-  left: 0;
-  right: 0;
-}
+
 .details-actions .delete-project-button {
   background-color: var(--coral);
   color: white;

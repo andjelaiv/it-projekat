@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import {
+  getCategories,
+  getDifficultyLevels,
+  getMaterials,
+  getProjects,
+  getTags,
+} from "../api";
 import "./Projects.css";
 
 function Projects() {
@@ -29,12 +35,30 @@ function Projects() {
   const updateUrlParams = (nextFilters) => {
     const params = {};
 
-    if (nextFilters.search) params.search = nextFilters.search;
-    if (nextFilters.category) params.category = nextFilters.category;
-    if (nextFilters.difficulty) params.difficulty = nextFilters.difficulty;
-    if (nextFilters.material) params.material = nextFilters.material;
-    if (nextFilters.tag) params.tag = nextFilters.tag;
-    if (nextFilters.rating) params.rating = nextFilters.rating;
+    if (nextFilters.search) {
+      params.search = nextFilters.search;
+    }
+
+    if (nextFilters.category) {
+      params.category = nextFilters.category;
+    }
+
+    if (nextFilters.difficulty) {
+      params.difficulty = nextFilters.difficulty;
+    }
+
+    if (nextFilters.material) {
+      params.material = nextFilters.material;
+    }
+
+    if (nextFilters.tag) {
+      params.tag = nextFilters.tag;
+    }
+
+    if (nextFilters.rating) {
+      params.rating = nextFilters.rating;
+    }
+
     if (nextFilters.sort && nextFilters.sort !== "newest") {
       params.sort = nextFilters.sort;
     }
@@ -42,58 +66,81 @@ function Projects() {
     setSearchParams(params);
   };
 
-  const fetchProjects = (currentFilters = filters) => {
+  const fetchProjects = async (currentFilters = filters) => {
     setLoading(true);
 
     const params = {};
 
-    if (currentFilters.search) params.search = currentFilters.search;
-    if (currentFilters.category) params.category = currentFilters.category;
-    if (currentFilters.difficulty) params.difficulty = currentFilters.difficulty;
-    if (currentFilters.material) params.material = currentFilters.material;
-    if (currentFilters.tag) params.tag = currentFilters.tag;
-    if (currentFilters.rating) params.rating = currentFilters.rating;
-    if (currentFilters.sort) params.sort = currentFilters.sort;
+    if (currentFilters.search) {
+      params.search = currentFilters.search;
+    }
 
-    axios
-      .get("http://localhost:5000/api/projects", { params })
-      .then((response) => {
-        setProjects(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju projekata:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    if (currentFilters.category) {
+      params.category = currentFilters.category;
+    }
+
+    if (currentFilters.difficulty) {
+      params.difficulty = currentFilters.difficulty;
+    }
+
+    if (currentFilters.material) {
+      params.material = currentFilters.material;
+    }
+
+    if (currentFilters.tag) {
+      params.tag = currentFilters.tag;
+    }
+
+    if (currentFilters.rating) {
+      params.rating = currentFilters.rating;
+    }
+
+    if (currentFilters.sort) {
+      params.sort = currentFilters.sort;
+    }
+
+    try {
+      const data = await getProjects(params);
+      setProjects(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju projekata:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/categories")
-      .then((response) => setCategories(response.data))
-      .catch((error) =>
-        console.error("Greška pri učitavanju kategorija:", error)
-      );
+    const fetchFilterOptions = async () => {
+      try {
+        const categoriesData = await getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Greška pri učitavanju kategorija:", error);
+      }
 
-    axios
-      .get("http://localhost:5000/api/difficulty-levels")
-      .then((response) => setDifficultyLevels(response.data))
-      .catch((error) =>
-        console.error("Greška pri učitavanju nivoa težine:", error)
-      );
+      try {
+        const difficultyData = await getDifficultyLevels();
+        setDifficultyLevels(difficultyData);
+      } catch (error) {
+        console.error("Greška pri učitavanju nivoa težine:", error);
+      }
 
-    axios
-      .get("http://localhost:5000/api/materials")
-      .then((response) => setMaterials(response.data))
-      .catch((error) =>
-        console.error("Greška pri učitavanju materijala:", error)
-      );
+      try {
+        const materialsData = await getMaterials();
+        setMaterials(materialsData);
+      } catch (error) {
+        console.error("Greška pri učitavanju materijala:", error);
+      }
 
-    axios
-      .get("http://localhost:5000/api/tags")
-      .then((response) => setTags(response.data))
-      .catch((error) => console.error("Greška pri učitavanju tagova:", error));
+      try {
+        const tagsData = await getTags();
+        setTags(tagsData);
+      } catch (error) {
+        console.error("Greška pri učitavanju tagova:", error);
+      }
+    };
+
+    fetchFilterOptions();
   }, []);
 
   useEffect(() => {
@@ -124,6 +171,7 @@ function Projects() {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
+
     updateUrlParams(filters);
     fetchProjects(filters);
   };
@@ -298,6 +346,7 @@ function Projects() {
           <div className="projects-topbar">
             <div>
               <h2>Svi projekti</h2>
+
               <p>
                 {loading
                   ? "Učitavanje projekata..."

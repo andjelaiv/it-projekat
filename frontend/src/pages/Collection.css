@@ -222,49 +222,6 @@
   gap: 16px;
 }
 
-.collection-item > button {
-  width: fit-content;
-  justify-self: center;
-  border: 3px solid var(--dark);
-  border-radius: 999px;
-  background-color: var(--blush);
-  color: white;
-  padding: 12px 18px;
-  font-family: var(--body-font);
-  font-size: 15px;
-  font-weight: 900;
-  box-shadow: 5px 5px 0 var(--dark);
-  cursor: pointer;
-  transition: 0.18s ease;
-}
-
-.collection-item > button:hover {
-  transform: translateY(-3px) rotate(-1deg);
-}
-
-@media (max-width: 700px) {
-  .collection-page {
-    width: min(100% - 28px, 1320px);
-    padding-top: 42px;
-  }
-
-  .collection-hero {
-    padding: 42px 22px;
-    border-radius: 32px;
-  }
-
-  .collection-status-section {
-    padding: 22px;
-  }
-
-  .collection-status-heading {
-    align-items: flex-start;
-  }
-
-  .collection-status-heading h2 {
-    font-size: 32px;
-  }
-}
 .collection-item-actions {
   display: flex;
   align-items: center;
@@ -362,8 +319,29 @@
 .collection-item {
   overflow: visible;
 }
-
 @media (max-width: 700px) {
+  .collection-page {
+    width: min(100% - 28px, 1320px);
+    padding-top: 42px;
+  }
+
+  .collection-hero {
+    padding: 42px 22px;
+    border-radius: 32px;
+  }
+
+  .collection-status-section {
+    padding: 22px;
+  }
+
+  .collection-status-heading {
+    align-items: flex-start;
+  }
+
+  .collection-status-heading h2 {
+    font-size: 32px;
+  }
+
   .collection-item-actions {
     flex-direction: column;
     align-items: stretch;
@@ -376,7 +354,7 @@
 
   .collection-status-menu {
     left: 0;
-    transform: none;
     width: 100%;
+    transform: none;
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { loginUser, registerUser } from "../api";
 import "./Auth.css";
 
 function Auth() {
@@ -40,62 +40,62 @@ function Auth() {
     }));
   };
 
-  const handleLoginSubmit = (event) => {
+  const handleLoginSubmit = async (event) => {
     event.preventDefault();
+
     setMessage("");
     setLoading(true);
 
-    axios
-      .post("http://localhost:5000/api/auth/login", loginData)
-      .then((response) => {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+    try {
+      const data = await loginUser(loginData);
 
-        setMessage("Prijava je uspješna ✿");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-        setTimeout(() => {
-          navigate("/");
-          window.location.reload();
-        }, 500);
-      })
-      .catch((error) => {
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri prijavi."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      setMessage("Prijava je uspješna ✿");
+
+      setTimeout(() => {
+        navigate("/");
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri prijavi."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegisterSubmit = (event) => {
+  const handleRegisterSubmit = async (event) => {
     event.preventDefault();
+
     setMessage("");
     setLoading(true);
 
-    axios
-      .post("http://localhost:5000/api/auth/register", registerData)
-      .then(() => {
-        setMessage("Registracija je uspješna. Sada se možeš prijaviti ✿");
+    try {
+      await registerUser(registerData);
 
-        setRegisterData({
-          username: "",
-          email: "",
-          password: "",
-        });
+      setMessage(
+        "Registracija je uspješna. Sada se možeš prijaviti ✿"
+      );
 
-        setActiveTab("login");
-      })
-      .catch((error) => {
-        setMessage(
-          error.response?.data?.message ||
-            "Došlo je do greške pri registraciji."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
+      setRegisterData({
+        username: "",
+        email: "",
+        password: "",
       });
+
+      setActiveTab("login");
+    } catch (error) {
+      setMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri registraciji."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -141,7 +141,10 @@ function Auth() {
         </div>
 
         {activeTab === "login" ? (
-          <form className="auth-form" onSubmit={handleLoginSubmit}>
+          <form
+            className="auth-form"
+            onSubmit={handleLoginSubmit}
+          >
             <label>
               Email
               <input
@@ -166,14 +169,21 @@ function Auth() {
               />
             </label>
 
-            {message && <p className="auth-message">{message}</p>}
+            {message && (
+              <p className="auth-message">{message}</p>
+            )}
 
             <button type="submit" disabled={loading}>
-              {loading ? "Provjerava se..." : "Prijavi se ♡"}
+              {loading
+                ? "Provjerava se..."
+                : "Prijavi se ♡"}
             </button>
           </form>
         ) : (
-          <form className="auth-form" onSubmit={handleRegisterSubmit}>
+          <form
+            className="auth-form"
+            onSubmit={handleRegisterSubmit}
+          >
             <label>
               Korisničko ime
               <input
@@ -210,17 +220,23 @@ function Auth() {
               />
             </label>
 
-            {message && <p className="auth-message">{message}</p>}
+            {message && (
+              <p className="auth-message">{message}</p>
+            )}
 
             <button type="submit" disabled={loading}>
-              {loading ? "Čuva se..." : "Napravi nalog ✿"}
+              {loading
+                ? "Čuva se..."
+                : "Napravi nalog ✿"}
             </button>
           </form>
         )}
 
         <div className="auth-footer">
           <span>✿</span>
-          <Link to="/projekti">Samo želim da istražujem projekte</Link>
+          <Link to="/projekti">
+            Samo želim da istražujem projekte
+          </Link>
           <span>✦</span>
         </div>
       </div>

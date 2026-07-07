@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import {
+  addFavorite,
+  getMyFavorites,
+  removeFavorite,
+} from "../api";
 import "./ProjectCard.css";
+import { getImageUrl } from "../utils/imageUrl";
 
 function formatRating(rating) {
   const value = Number(rating);
@@ -17,37 +22,35 @@ function ProjectCard({ project }) {
   const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const imageUrl = project.cover_image
-    ? `http://localhost:5000${project.cover_image}`
-    : null;
+  const imageUrl = getImageUrl(project.cover_image);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const checkFavoriteStatus = async () => {
+      const token = localStorage.getItem("token");
 
-    if (!token) {
-      setIsFavorite(false);
-      return;
-    }
+      if (!token) {
+        setIsFavorite(false);
+        return;
+      }
 
-    axios
-      .get("http://localhost:5000/api/favorites/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        const alreadyFavorite = response.data.some(
-          (favoriteProject) => Number(favoriteProject.id) === Number(project.id)
+      try {
+        const favorites = await getMyFavorites();
+
+        const alreadyFavorite = favorites.some(
+          (favoriteProject) =>
+            Number(favoriteProject.id) === Number(project.id)
         );
 
         setIsFavorite(alreadyFavorite);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Greška pri provjeri favorita:", error);
-      });
+      }
+    };
+
+    checkFavoriteStatus();
   }, [project.id]);
 
-  const handleFavoriteClick = (event) => {
+  const handleFavoriteClick = async (event) => {
     event.preventDefault();
     event.stopPropagation();
 
@@ -59,51 +62,33 @@ function ProjectCard({ project }) {
     }
 
     if (isFavorite) {
-      axios
-        .delete(`http://localhost:5000/api/favorites/${project.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then(() => {
-          setIsFavorite(false);
-        })
-        .catch((error) => {
-          console.error("Greška pri uklanjanju iz favorita:", error);
-        });
+      try {
+        await removeFavorite(project.id);
+        setIsFavorite(false);
+      } catch (error) {
+        console.error("Greška pri uklanjanju iz favorita:", error);
+      }
 
       return;
     }
 
-    axios
-      .post(
-        "http://localhost:5000/api/favorites",
-        {
-          project_id: project.id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
+    try {
+      await addFavorite(project.id);
+      setIsFavorite(true);
+    } catch (error) {
+      const message = error.response?.data?.message || "";
+
+      if (
+        message.toLowerCase().includes("već") ||
+        message.toLowerCase().includes("vec") ||
+        message.toLowerCase().includes("already")
+      ) {
         setIsFavorite(true);
-      })
-      .catch((error) => {
-        const message = error.response?.data?.message || "";
+        return;
+      }
 
-        if (
-          message.toLowerCase().includes("već") ||
-          message.toLowerCase().includes("vec") ||
-          message.toLowerCase().includes("already")
-        ) {
-          setIsFavorite(true);
-          return;
-        }
-
-        console.error("Greška pri dodavanju u favorite:", error);
-      });
+      console.error("Greška pri dodavanju u favorite:", error);
+    }
   };
 
   return (
@@ -126,7 +111,11 @@ function ProjectCard({ project }) {
         </button>
 
         {imageUrl ? (
-          <img className="project-image" src={imageUrl} alt={project.title} />
+          <img
+            className="project-image"
+            src={imageUrl}
+            alt={project.title}
+          />
         ) : (
           <div className="project-image-placeholder">Nema slike</div>
         )}
@@ -148,7 +137,9 @@ function ProjectCard({ project }) {
           <span>{formatRating(project.average_rating)}</span>
 
           {Number(project.review_count) > 0 && (
-            <span className="review-count">({project.review_count})</span>
+            <span className="review-count">
+              ({project.review_count})
+            </span>
           )}
         </div>
       </div>

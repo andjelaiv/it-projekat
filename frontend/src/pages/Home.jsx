@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import {
+  getCategories,
+  getFeaturedProjects,
+  getHomeStats,
+  getProjects,
+} from "../api";
+import { getImageUrl } from "../utils/imageUrl";
 import "./Home.css";
 
 function formatStatNumber(number) {
@@ -63,28 +69,25 @@ function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/stats/home")
-      .then((response) => {
-        setStats(response.data);
+    getHomeStats()
+      .then((data) => {
+        setStats(data);
       })
       .catch((error) => {
         console.error("Greška pri učitavanju statistike:", error);
       });
 
-    axios
-      .get("http://localhost:5000/api/projects/featured")
-      .then((response) => {
-        setFeaturedProjects(response.data);
+    getFeaturedProjects()
+      .then((data) => {
+        setFeaturedProjects(data);
       })
       .catch((error) => {
         console.error("Greška pri učitavanju izdvojenih projekata:", error);
       });
 
-    axios
-      .get("http://localhost:5000/api/categories")
-      .then((response) => {
-        setCategories(response.data);
+    getCategories()
+      .then((data) => {
+        setCategories(data);
       })
       .catch((error) => {
         console.error("Greška pri učitavanju kategorija:", error);
@@ -99,14 +102,11 @@ function Home() {
     }
 
     const timeoutId = setTimeout(() => {
-      axios
-        .get("http://localhost:5000/api/projects", {
-          params: {
-            search: searchTerm,
-          },
-        })
-        .then((response) => {
-          setSuggestions(response.data.slice(0, 5));
+      getProjects({
+        search: searchTerm,
+      })
+        .then((data) => {
+          setSuggestions(data.slice(0, 5));
           setShowSuggestions(true);
         })
         .catch((error) => {
@@ -189,7 +189,7 @@ function Home() {
 
       <div className="hero-image-card">
         <img
-          src="http://localhost:5000/uploads/1782128316453-bun.jfif"
+          src={getImageUrl("/uploads/1782128316453-bun.jfif")}
           alt="Heklani projekat"
         />
       </div>
@@ -224,7 +224,7 @@ function Home() {
                   >
                     {project.cover_image ? (
                       <img
-                        src={`http://localhost:5000${project.cover_image}`}
+                        src={getImageUrl(project.cover_image)}
                         alt={project.title}
                       />
                     ) : (
@@ -233,6 +233,7 @@ function Home() {
 
                     <span>
                       <strong>{project.title}</strong>
+
                       <small>
                         {project.category} · {project.difficulty}
                       </small>
@@ -240,7 +241,9 @@ function Home() {
                   </button>
                 ))
               ) : (
-                <p className="suggestion-empty">Nema pronađenih projekata.</p>
+                <p className="suggestion-empty">
+                  Nema pronađenih projekata.
+                </p>
               )}
             </div>
           )}

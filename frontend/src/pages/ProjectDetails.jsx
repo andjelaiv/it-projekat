@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import ProjectCard from "../components/ProjectCard";
+import {
+  addFavorite,
+  addToCollection,
+  createReview,
+  deleteProject,
+  deleteReview,
+  getMyFavorites,
+  getProjectById,
+  getProjectImages,
+  getProjectReviews,
+  getSimilarProjects,
+  removeFavorite,
+  updateCollectionStatus,
+} from "../api";
+import { getImageUrl } from "../utils/imageUrl";
 import "./ProjectDetails.css";
 
 function formatRating(rating) {
@@ -19,6 +33,7 @@ function ProjectDetails() {
   const navigate = useNavigate();
 
   const savedUser = localStorage.getItem("user");
+
   let currentUser = null;
 
   try {
@@ -40,11 +55,15 @@ function ProjectDetails() {
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewMessage, setReviewMessage] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+
   const [isFavorite, setIsFavorite] = useState(false);
+
   const [collectionDropdownOpen, setCollectionDropdownOpen] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
+
   const [projectImages, setProjectImages] = useState([]);
   const [similarProjects, setSimilarProjects] = useState([]);
+
   const collectionOptions = [
     {
       id: 1,
@@ -63,50 +82,43 @@ function ProjectDetails() {
     },
   ];
 
-  const fetchProject = () => {
-    return axios
-      .get(`http://localhost:5000/api/projects/${id}`)
-      .then((response) => {
-        setProject(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju projekta:", error);
-      });
+  const fetchProject = async () => {
+    try {
+      const data = await getProjectById(id);
+      setProject(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju projekta:", error);
+    }
   };
 
-  const fetchReviews = () => {
-    return axios
-      .get(`http://localhost:5000/api/reviews/${id}`)
-      .then((response) => {
-        setReviews(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju komentara:", error);
-      });
+  const fetchReviews = async () => {
+    try {
+      const data = await getProjectReviews(id);
+      setReviews(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju komentara:", error);
+    }
   };
 
-  const fetchProjectImages = () => {
-    return axios
-      .get(`http://localhost:5000/api/projects/${id}/images`)
-      .then((response) => {
-        setProjectImages(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju galerije:", error);
-      });
-  };
-  const fetchSimilarProjects = () => {
-    return axios
-      .get(`http://localhost:5000/api/projects/${id}/similar`)
-      .then((response) => {
-        setSimilarProjects(response.data);
-      })
-      .catch((error) => {
-        console.error("Greška pri učitavanju sličnih projekata:", error);
-      });
+  const fetchProjectImages = async () => {
+    try {
+      const data = await getProjectImages(id);
+      setProjectImages(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju galerije:", error);
+    }
   };
 
-  const checkIfFavorite = () => {
+  const fetchSimilarProjects = async () => {
+    try {
+      const data = await getSimilarProjects(id);
+      setSimilarProjects(data);
+    } catch (error) {
+      console.error("Greška pri učitavanju sličnih projekata:", error);
+    }
+  };
+
+  const checkIfFavorite = async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -114,39 +126,39 @@ function ProjectDetails() {
       return;
     }
 
-    axios
-      .get("http://localhost:5000/api/favorites/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        const alreadyFavorite = response.data.some(
-          (favoriteProject) => Number(favoriteProject.id) === Number(id)
-        );
+    try {
+      const data = await getMyFavorites();
 
-        setIsFavorite(alreadyFavorite);
-      })
-      .catch((error) => {
-        console.error("Greška pri provjeri favorita:", error);
-      });
+      const alreadyFavorite = data.some(
+        (favoriteProject) => Number(favoriteProject.id) === Number(id)
+      );
+
+      setIsFavorite(alreadyFavorite);
+    } catch (error) {
+      console.error("Greška pri provjeri favorita:", error);
+    }
   };
 
   useEffect(() => {
-    setLoading(true);
+    const fetchProjectDetails = async () => {
+      setLoading(true);
 
-    Promise.all([
-      fetchProject(),
-      fetchReviews(),
-      fetchProjectImages(),
-      fetchSimilarProjects(),
-    ]).finally(() => {
-      checkIfFavorite();
+      await Promise.all([
+        fetchProject(),
+        fetchReviews(),
+        fetchProjectImages(),
+        fetchSimilarProjects(),
+      ]);
+
+      await checkIfFavorite();
+
       setLoading(false);
-    });
+    };
+
+    fetchProjectDetails();
   }, [id]);
 
-  const handleReviewSubmit = (event) => {
+  const handleReviewSubmit = async (event) => {
     event.preventDefault();
 
     const token = localStorage.getItem("token");
@@ -164,45 +176,32 @@ function ProjectDetails() {
     setSubmittingReview(true);
     setReviewMessage("");
 
-    axios
-      .post(
-        "http://localhost:5000/api/reviews",
-        {
-          project_id: Number(id),
-          rating: newReview.rating,
-          comment: newReview.comment,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
-        setNewReview({
-          rating: 0,
-          comment: "",
-        });
+    try {
+      await createReview(id, newReview.rating, newReview.comment);
 
-        setHoverRating(0);
-        setReviewMessage("Recenzija je uspješno poslata ✿");
-
-        fetchReviews();
-        fetchProject();
-      })
-      .catch((error) => {
-        console.error("Greška pri slanju recenzije:", error);
-        setReviewMessage(
-          error.response?.data?.message ||
-          "Došlo je do greške pri slanju recenzije."
-        );
-      })
-      .finally(() => {
-        setSubmittingReview(false);
+      setNewReview({
+        rating: 0,
+        comment: "",
       });
+
+      setHoverRating(0);
+      setReviewMessage("Recenzija je uspješno poslata ✿");
+
+      await fetchReviews();
+      await fetchProject();
+    } catch (error) {
+      console.error("Greška pri slanju recenzije:", error);
+
+      setReviewMessage(
+        error.response?.data?.message ||
+          "Došlo je do greške pri slanju recenzije."
+      );
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
-  const handleDeleteReview = (reviewId) => {
+  const handleDeleteReview = async (reviewId) => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -218,26 +217,24 @@ function ProjectDetails() {
       return;
     }
 
-    axios
-      .delete(`http://localhost:5000/api/reviews/${reviewId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        setReviewMessage("Komentar je obrisan.");
-        fetchReviews();
-        fetchProject();
-      })
-      .catch((error) => {
-        console.error("Greška pri brisanju komentara:", error);
-        setReviewMessage(
-          error.response?.data?.message ||
+    try {
+      await deleteReview(reviewId);
+
+      setReviewMessage("Komentar je obrisan.");
+
+      await fetchReviews();
+      await fetchProject();
+    } catch (error) {
+      console.error("Greška pri brisanju komentara:", error);
+
+      setReviewMessage(
+        error.response?.data?.message ||
           "Došlo je do greške pri brisanju komentara."
-        );
-      });
+      );
+    }
   };
-  const handleFavoriteToggle = () => {
+
+  const handleFavoriteToggle = async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -246,52 +243,35 @@ function ProjectDetails() {
     }
 
     if (isFavorite) {
-      axios
-        .delete(`http://localhost:5000/api/favorites/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then(() => {
-          setIsFavorite(false);
-        })
-        .catch((error) => {
-          console.error("Greška pri uklanjanju iz favorita:", error);
-        });
+      try {
+        await removeFavorite(id);
+        setIsFavorite(false);
+      } catch (error) {
+        console.error("Greška pri uklanjanju iz favorita:", error);
+      }
+
       return;
     }
 
-    axios
-      .post(
-        "http://localhost:5000/api/favorites",
-        {
-          project_id: Number(id),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
+    try {
+      await addFavorite(id);
+      setIsFavorite(true);
+    } catch (error) {
+      const message = error.response?.data?.message || "";
+
+      if (
+        message.toLowerCase().includes("već") ||
+        message.toLowerCase().includes("already")
+      ) {
         setIsFavorite(true);
-      })
-      .catch((error) => {
-        const message = error.response?.data?.message || "";
+        return;
+      }
 
-        if (
-          message.toLowerCase().includes("već") ||
-          message.toLowerCase().includes("already")
-        ) {
-          setIsFavorite(true);
-          return;
-        }
-
-        console.error("Greška pri dodavanju u favorite:", error);
-      });
+      console.error("Greška pri dodavanju u favorite:", error);
+    }
   };
 
-  const handleCollectionSelect = (statusId, statusLabel) => {
+  const handleCollectionSelect = async (statusId, statusLabel) => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -301,66 +281,50 @@ function ProjectDetails() {
 
     setCollectionMessage("");
 
-    axios
-      .post(
-        "http://localhost:5000/api/collection",
-        {
-          project_id: Number(id),
-          status_id: statusId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      .then(() => {
-        setCollectionDropdownOpen(false);
-        setCollectionMessage(`Projekat je dodat u kolekciju: ${statusLabel}.`);
-      })
-      .catch((error) => {
-        const message = error.response?.data?.message || "";
+    try {
+      await addToCollection(id, statusId);
 
-        if (
-          message.toLowerCase().includes("već") ||
-          message.toLowerCase().includes("vec") ||
-          message.toLowerCase().includes("already") ||
-          error.response?.status === 409
-        ) {
-          axios
-            .put(
-              `http://localhost:5000/api/collection/${id}`,
-              {
-                status_id: statusId,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            )
-            .then(() => {
-              setCollectionDropdownOpen(false);
-              setCollectionMessage(
-                `Status u kolekciji je promijenjen: ${statusLabel}.`
-              );
-            })
-            .catch((updateError) => {
-              console.error("Greška pri izmjeni statusa:", updateError);
-              setCollectionMessage(
-                "Došlo je do greške pri izmjeni statusa u kolekciji."
-              );
-            });
+      setCollectionDropdownOpen(false);
+      setCollectionMessage(
+        `Projekat je dodat u kolekciju: ${statusLabel}.`
+      );
+    } catch (error) {
+      const message = error.response?.data?.message || "";
 
-          return;
+      const projectAlreadyExists =
+        message.toLowerCase().includes("već") ||
+        message.toLowerCase().includes("vec") ||
+        message.toLowerCase().includes("already") ||
+        error.response?.status === 409;
+
+      if (projectAlreadyExists) {
+        try {
+          await updateCollectionStatus(id, statusId);
+
+          setCollectionDropdownOpen(false);
+          setCollectionMessage(
+            `Status u kolekciji je promijenjen: ${statusLabel}.`
+          );
+        } catch (updateError) {
+          console.error("Greška pri izmjeni statusa:", updateError);
+
+          setCollectionMessage(
+            "Došlo je do greške pri izmjeni statusa u kolekciji."
+          );
         }
 
-        console.error("Greška pri dodavanju u kolekciju:", error);
-        setCollectionMessage("Došlo je do greške pri dodavanju u kolekciju.");
-      });
+        return;
+      }
+
+      console.error("Greška pri dodavanju u kolekciju:", error);
+
+      setCollectionMessage(
+        "Došlo je do greške pri dodavanju u kolekciju."
+      );
+    }
   };
 
-  const handleDeleteProject = () => {
+  const handleDeleteProject = async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -376,22 +340,17 @@ function ProjectDetails() {
       return;
     }
 
-    axios
-      .delete(`http://localhost:5000/api/projects/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => {
-        navigate("/projekti");
-      })
-      .catch((error) => {
-        console.error("Greška pri brisanju projekta:", error);
-        setCollectionMessage(
-          error.response?.data?.message ||
+    try {
+      await deleteProject(id);
+      navigate("/projekti");
+    } catch (error) {
+      console.error("Greška pri brisanju projekta:", error);
+
+      setCollectionMessage(
+        error.response?.data?.message ||
           "Došlo je do greške pri brisanju projekta."
-        );
-      });
+      );
+    }
   };
 
   const getReviewUsername = (review) => {
@@ -430,21 +389,7 @@ function ProjectDetails() {
     );
   }
 
-  const imageUrl = project.cover_image
-    ? `http://localhost:5000${project.cover_image}`
-    : null;
-
-  const getGalleryImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return null;
-    }
-
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-
-    return `http://localhost:5000${imagePath}`;
-  };
+  const imageUrl = getImageUrl(project.cover_image);
 
   const getGalleryImageLabel = (imageType, index) => {
     if (imageType === "progress") {
@@ -467,8 +412,9 @@ function ProjectDetails() {
 
   const calculatedAverage =
     reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) /
-      reviews.length
+      ? reviews.reduce((sum, review) => {
+          return sum + Number(review.rating);
+        }, 0) / reviews.length
       : 0;
 
   const displayRating =
@@ -477,7 +423,9 @@ function ProjectDetails() {
       : calculatedAverage;
 
   const displayReviewCount =
-    Number(project.review_count) > 0 ? Number(project.review_count) : reviews.length;
+    Number(project.review_count) > 0
+      ? Number(project.review_count)
+      : reviews.length;
 
   const currentUserId = Number(
     currentUser?.id || currentUser?.user_id || currentUser?.userId
@@ -530,7 +478,9 @@ function ProjectDetails() {
           <p className="details-author">
             Autor:{" "}
             {project.author_id ? (
-              <Link to={`/profil/${project.author_id}`}>@{project.author}</Link>
+              <Link to={`/profil/${project.author_id}`}>
+                @{project.author}
+              </Link>
             ) : (
               <span>@{project.author}</span>
             )}
@@ -539,6 +489,7 @@ function ProjectDetails() {
           <div className="details-rating">
             <span>★</span>
             <strong>{formatRating(displayRating)}</strong>
+
             <span>
               ({displayReviewCount}{" "}
               {displayReviewCount === 1 ? "recenzija" : "recenzije"})
@@ -565,7 +516,9 @@ function ProjectDetails() {
               onClick={handleFavoriteToggle}
               className={isFavorite ? "favorite-details-active" : ""}
             >
-              {isFavorite ? "♥ Projekat u favoritima" : "♡ Dodaj u favorite"}
+              {isFavorite
+                ? "♥ Projekat u favoritima"
+                : "♡ Dodaj u favorite"}
             </button>
 
             <div className="collection-dropdown">
@@ -590,7 +543,9 @@ function ProjectDetails() {
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => handleCollectionSelect(option.id, option.label)}
+                      onClick={() =>
+                        handleCollectionSelect(option.id, option.label)
+                      }
                     >
                       <span>{option.emoji}</span>
                       {option.label}
@@ -620,6 +575,7 @@ function ProjectDetails() {
               </button>
             )}
           </div>
+
           {collectionMessage && (
             <p className="collection-message">{collectionMessage}</p>
           )}
@@ -639,16 +595,21 @@ function ProjectDetails() {
 
           <div className="process-gallery-grid">
             {projectImages.slice(0, 4).map((image, index) => {
-              const galleryImageUrl = getGalleryImageUrl(image.image_url);
+              const galleryImageUrl = getImageUrl(image.image_url);
 
               return (
-                <div className="process-gallery-card" key={image.id || index}>
+                <div
+                  className="process-gallery-card"
+                  key={image.id || index}
+                >
                   <img
                     src={galleryImageUrl}
                     alt={getGalleryImageLabel(image.image_type, index)}
                   />
 
-                  <span>{getGalleryImageLabel(image.image_type, index)}</span>
+                  <span>
+                    {getGalleryImageLabel(image.image_type, index)}
+                  </span>
                 </div>
               );
             })}
@@ -674,7 +635,6 @@ function ProjectDetails() {
           ) : (
             <p>Nema dodatih materijala.</p>
           )}
-          
         </div>
 
         <div className="details-box">
@@ -683,7 +643,10 @@ function ProjectDetails() {
           {tags.length > 0 ? (
             <div className="chip-list">
               {tags.map((tag) => (
-                <Link key={tag.id || tag.name} to={`/projekti?tag=${tag.id}`}>
+                <Link
+                  key={tag.id || tag.name}
+                  to={`/projekti?tag=${tag.id}`}
+                >
                   {tag.name}
                 </Link>
               ))}
@@ -693,7 +656,8 @@ function ProjectDetails() {
           )}
         </div>
       </div>
-            {similarProjects.length > 0 && (
+
+      {similarProjects.length > 0 && (
         <section className="similar-projects-section">
           <div className="similar-projects-heading">
             <div>
@@ -706,7 +670,10 @@ function ProjectDetails() {
 
           <div className="similar-projects-grid">
             {similarProjects.slice(0, 3).map((similarProject) => (
-              <ProjectCard key={similarProject.id} project={similarProject} />
+              <ProjectCard
+                key={similarProject.id}
+                project={similarProject}
+              />
             ))}
           </div>
         </section>
@@ -749,6 +716,7 @@ function ProjectDetails() {
 
             <div className="review-form-heading">
               <span>♡</span>
+
               <div>
                 <h3>Ostavi mali review</h3>
                 <p>Podijeli koliko ti se svidio pattern ♡</p>
@@ -764,7 +732,9 @@ function ProjectDetails() {
                     type="button"
                     key={star}
                     className={
-                      star <= (hoverRating || newReview.rating) ? "active" : ""
+                      star <= (hoverRating || newReview.rating)
+                        ? "active"
+                        : ""
                     }
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
@@ -800,7 +770,9 @@ function ProjectDetails() {
               <span>{newReview.comment.length}/500</span>
             </div>
 
-            {reviewMessage && <p className="review-message">{reviewMessage}</p>}
+            {reviewMessage && (
+              <p className="review-message">{reviewMessage}</p>
+            )}
 
             <div className="review-form-bottom">
               <div className="review-mini-icons">
@@ -837,7 +809,10 @@ function ProjectDetails() {
                     </div>
                   </div>
 
-                  <p>{review.comment || "Korisnik nije ostavio komentar."}</p>
+                  <p>
+                    {review.comment ||
+                      "Korisnik nije ostavio komentar."}
+                  </p>
                 </div>
               ))}
             </div>

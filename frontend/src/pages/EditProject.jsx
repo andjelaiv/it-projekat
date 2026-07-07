@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import {
+  getCategories,
+  getDifficultyLevels,
+  getMaterials,
+  getProjectById,
+  getTags,
+  updateProject,
+} from "../api";
 import "./AddProject.css";
 
 function EditProject() {
@@ -8,6 +15,7 @@ function EditProject() {
   const navigate = useNavigate();
 
   const savedUser = localStorage.getItem("user");
+
   let currentUser = null;
 
   try {
@@ -47,62 +55,75 @@ function EditProject() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setMessage("");
 
         const [
-          projectResponse,
-          categoriesResponse,
-          difficultyResponse,
-          materialsResponse,
-          tagsResponse,
+          projectData,
+          categoriesData,
+          difficultyData,
+          materialsData,
+          tagsData,
         ] = await Promise.all([
-          axios.get(`http://localhost:5000/api/projects/${id}`),
-          axios.get("http://localhost:5000/api/categories"),
-          axios.get("http://localhost:5000/api/difficulty-levels"),
-          axios.get("http://localhost:5000/api/materials"),
-          axios.get("http://localhost:5000/api/tags"),
+          getProjectById(id),
+          getCategories(),
+          getDifficultyLevels(),
+          getMaterials(),
+          getTags(),
         ]);
 
-        const project = projectResponse.data;
-
         const currentUserId = Number(
-          currentUser?.id || currentUser?.user_id || currentUser?.userId
+          currentUser?.id ||
+            currentUser?.user_id ||
+            currentUser?.userId
         );
 
-        const projectAuthorId = Number(project.author_id);
+        const projectAuthorId = Number(projectData.author_id);
 
         const canEditProject =
           currentUser &&
-          (currentUser.role === "admin" || currentUserId === projectAuthorId);
+          (currentUser.role === "admin" ||
+            currentUserId === projectAuthorId);
 
         if (!canEditProject) {
           navigate("/projekti");
           return;
         }
 
-        setCategories(categoriesResponse.data);
-        setDifficultyLevels(difficultyResponse.data);
-        setMaterials(materialsResponse.data);
-        setTags(tagsResponse.data);
+        setCategories(categoriesData);
+        setDifficultyLevels(difficultyData);
+        setMaterials(materialsData);
+        setTags(tagsData);
 
         setFormData({
-          title: project.title || "",
-          description: project.description || "",
-          estimated_time: project.estimated_time || "",
-          pattern_text: project.pattern_text || "",
-          category_id: project.category_id ? String(project.category_id) : "",
-          difficulty_id: project.difficulty_id
-            ? String(project.difficulty_id)
+          title: projectData.title || "",
+          description: projectData.description || "",
+          estimated_time: projectData.estimated_time || "",
+          pattern_text: projectData.pattern_text || "",
+          category_id: projectData.category_id
+            ? String(projectData.category_id)
             : "",
-          material_ids: Array.isArray(project.materials)
-            ? project.materials.map((material) => Number(material.id))
+          difficulty_id: projectData.difficulty_id
+            ? String(projectData.difficulty_id)
+            : "",
+          material_ids: Array.isArray(projectData.materials)
+            ? projectData.materials.map((material) =>
+                Number(material.id)
+              )
             : [],
-          tag_ids: Array.isArray(project.tags)
-            ? project.tags.map((tag) => Number(tag.id))
+          tag_ids: Array.isArray(projectData.tags)
+            ? projectData.tags.map((tag) => Number(tag.id))
             : [],
         });
       } catch (error) {
-        console.error("Greška pri učitavanju projekta za uređivanje:", error);
-        setMessage("Došlo je do greške pri učitavanju projekta.");
+        console.error(
+          "Greška pri učitavanju projekta za uređivanje:",
+          error
+        );
+
+        setMessage(
+          error.response?.data?.message ||
+            "Došlo je do greške pri učitavanju projekta."
+        );
       } finally {
         setLoading(false);
       }
@@ -128,13 +149,18 @@ function EditProject() {
       if (checked) {
         return {
           ...previousData,
-          [fieldName]: [...previousData[fieldName], value],
+          [fieldName]: [
+            ...previousData[fieldName],
+            value,
+          ],
         };
       }
 
       return {
         ...previousData,
-        [fieldName]: previousData[fieldName].filter((itemId) => itemId !== value),
+        [fieldName]: previousData[fieldName].filter(
+          (itemId) => itemId !== value
+        ),
       };
     });
   };
@@ -156,7 +182,9 @@ function EditProject() {
       !formData.difficulty_id ||
       !formData.pattern_text
     ) {
-      setMessage("Popuni naziv, opis, kategoriju, nivo težine i uputstvo.");
+      setMessage(
+        "Popuni naziv, opis, kategoriju, nivo težine i uputstvo."
+      );
       return;
     }
 
@@ -164,24 +192,18 @@ function EditProject() {
       setSubmitting(true);
       setMessage("");
 
-      await axios.put(
-        `http://localhost:5000/api/projects/${id}`,
-        {
-          title: formData.title,
-          description: formData.description,
-          estimated_time: formData.estimated_time,
-          pattern_text: formData.pattern_text,
-          category_id: Number(formData.category_id),
-          difficulty_id: Number(formData.difficulty_id),
-          material_ids: formData.material_ids,
-          tag_ids: formData.tag_ids,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const projectData = {
+        title: formData.title,
+        description: formData.description,
+        estimated_time: formData.estimated_time,
+        pattern_text: formData.pattern_text,
+        category_id: Number(formData.category_id),
+        difficulty_id: Number(formData.difficulty_id),
+        material_ids: formData.material_ids,
+        tag_ids: formData.tag_ids,
+      };
+
+      await updateProject(id, projectData);
 
       setMessage("Projekat je uspješno izmijenjen ✿");
 
@@ -190,6 +212,7 @@ function EditProject() {
       }, 800);
     } catch (error) {
       console.error("Greška pri izmjeni projekta:", error);
+
       setMessage(
         error.response?.data?.message ||
           "Došlo je do greške pri izmjeni projekta."
@@ -202,7 +225,9 @@ function EditProject() {
   if (loading) {
     return (
       <section className="add-project-page">
-        <div className="details-message">Učitavanje projekta...</div>
+        <div className="details-message">
+          Učitavanje projekta...
+        </div>
       </section>
     );
   }
@@ -222,7 +247,10 @@ function EditProject() {
         </div>
       </div>
 
-      <form className="add-project-form" onSubmit={handleSubmit}>
+      <form
+        className="add-project-form"
+        onSubmit={handleSubmit}
+      >
         <div className="form-grid">
           <label>
             Naziv projekta *
@@ -253,10 +281,15 @@ function EditProject() {
               value={formData.category_id}
               onChange={handleInputChange}
             >
-              <option value="">Izaberi kategoriju</option>
+              <option value="">
+                Izaberi kategoriju
+              </option>
 
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
                   {category.name}
                 </option>
               ))}
@@ -273,7 +306,10 @@ function EditProject() {
               <option value="">Izaberi nivo</option>
 
               {difficultyLevels.map((level) => (
-                <option key={level.id} value={level.id}>
+                <option
+                  key={level.id}
+                  value={level.id}
+                >
                   {level.name}
                 </option>
               ))}
@@ -306,15 +342,24 @@ function EditProject() {
 
           <div className="checkbox-list">
             {materials.map((material) => (
-              <label key={material.id} className="checkbox-pill">
+              <label
+                key={material.id}
+                className="checkbox-pill"
+              >
                 <input
                   type="checkbox"
                   value={material.id}
-                  checked={formData.material_ids.includes(Number(material.id))}
+                  checked={formData.material_ids.includes(
+                    Number(material.id)
+                  )}
                   onChange={(event) =>
-                    handleCheckboxChange(event, "material_ids")
+                    handleCheckboxChange(
+                      event,
+                      "material_ids"
+                    )
                   }
                 />
+
                 <span>{material.name}</span>
               </label>
             ))}
@@ -326,28 +371,50 @@ function EditProject() {
 
           <div className="checkbox-list">
             {tags.map((tag) => (
-              <label key={tag.id} className="checkbox-pill">
+              <label
+                key={tag.id}
+                className="checkbox-pill"
+              >
                 <input
                   type="checkbox"
                   value={tag.id}
-                  checked={formData.tag_ids.includes(Number(tag.id))}
-                  onChange={(event) => handleCheckboxChange(event, "tag_ids")}
+                  checked={formData.tag_ids.includes(
+                    Number(tag.id)
+                  )}
+                  onChange={(event) =>
+                    handleCheckboxChange(event, "tag_ids")
+                  }
                 />
+
                 <span>{tag.name}</span>
               </label>
             ))}
           </div>
         </div>
 
-        {message && <p className="add-project-message">{message}</p>}
+        {message && (
+          <p className="add-project-message">
+            {message}
+          </p>
+        )}
 
         <div className="add-project-actions">
-          <button type="button" onClick={() => navigate(`/projekti/${id}`)}>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`/projekti/${id}`)
+            }
+          >
             Odustani
           </button>
 
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Čuva se..." : "Sačuvaj izmjene ✿"}
+          <button
+            type="submit"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Čuva se..."
+              : "Sačuvaj izmjene ✿"}
           </button>
         </div>
       </form>

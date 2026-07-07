@@ -1,6 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
+
+function getStoredUser() {
+  const savedUser = localStorage.getItem("user");
+
+  if (!savedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(savedUser);
+  } catch {
+    return null;
+  }
+}
 
 function HomeIcon() {
   return (
@@ -105,16 +119,8 @@ function UserIcon() {
 function Header() {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getStoredUser());
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
 
   const protectedLink = (path) => {
     return user ? path : "/prijava-potrebna";
@@ -135,11 +141,16 @@ function Header() {
         <span className="logo-circle">
           <HomeIcon />
         </span>
+
         <span>Kloopko</span>
       </Link>
 
       <div className="header-actions">
-        <Link to="/projekti" className="icon-link" aria-label="Pretraga">
+        <Link
+          to="/projekti"
+          className="icon-link"
+          aria-label="Pretraga"
+        >
           <SearchIcon />
         </Link>
 
@@ -160,7 +171,11 @@ function Header() {
         </Link>
 
         {user?.role === "admin" && (
-          <Link to="/admin" className="icon-link" aria-label="Admin panel">
+          <Link
+            to="/admin"
+            className="icon-link"
+            aria-label="Admin panel"
+          >
             <ShieldIcon />
           </Link>
         )}
@@ -175,7 +190,10 @@ function Header() {
             <button
               type="button"
               className="login-button user-menu-button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={() =>
+                setDropdownOpen((previousValue) => !previousValue)
+              }
+              aria-expanded={dropdownOpen}
             >
               @{user.username}
               <span className="dropdown-arrow">▼</span>
