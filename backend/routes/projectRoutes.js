@@ -7,15 +7,67 @@ const { authenticateToken } = require("../middleware/authMiddleware");
 const router = express.Router();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, path.join(__dirname, "../uploads"));
   },
+
   filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + file.originalname;
+    const safeFileName = file.originalname.replace(/\s+/g, "-");
+
+    const uniqueName =
+      Date.now() + "-" + safeFileName;
+
     cb(null, uniqueName);
   },
 });
 
 const upload = multer({ storage });
+
+const canEditProject = (req, res, next) => {
+  const projectId = Number(req.params.id);
+
+  if (!projectId) {
+    return res.status(400).json({
+      message: "ID projekta nije validan.",
+    });
+  }
+
+  const sql = `
+    SELECT id, author_id
+    FROM projects
+    WHERE id = ?
+  `;
+
+  db.query(sql, [projectId], (error, results) => {
+    if (error) {
+      return res.status(500).json({
+        message: "Greška pri provjeri projekta.",
+        error,
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: "Projekat nije pronađen.",
+      });
+    }
+
+    const project = results[0];
+
+    const isAuthor =
+      Number(project.author_id) === Number(req.user.id);
+
+    const isAdmin = req.user.role === "admin";
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({
+        message:
+          "Nemaš dozvolu za dodavanje slika ovom projektu.",
+      });
+    }
+
+    next();
+  });
+};
 router.get("/categories", (req, res) => {
   db.query("SELECT * FROM categories ORDER BY name", (err, results) => {
     if (err) return res.status(500).json({ message: "Greška.", error: err });
@@ -689,6 +741,7 @@ router.delete("/projects/:id", authenticateToken, (req, res) => {
 router.post(
   "/projects/:id/cover",
   authenticateToken,
+  canEditProject,
   upload.single("cover"),
   (req, res) => {
     const projectId = req.params.id;
@@ -720,6 +773,7 @@ router.post(
 router.post(
   "/projects/:id/images",
   authenticateToken,
+  canEditProject,
   upload.array("images", 10),
   (req, res) => {
     const projectId = req.params.id;

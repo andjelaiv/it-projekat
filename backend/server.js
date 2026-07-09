@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 require("./db");
@@ -13,30 +14,15 @@ const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 
-const { authenticateToken, isAdmin } = require("./middleware/authMiddleware");
-
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static("uploads"));
 
-app.get("/api/test", (req, res) => {
-  res.json({ message: "Backend radi!" });
-});
-
-app.get("/api/profile", authenticateToken, (req, res) => {
-  res.json({
-    message: "Ovo je zaštićena ruta.",
-    user: req.user,
-  });
-});
-
-app.get("/api/admin-test", authenticateToken, isAdmin, (req, res) => {
-  res.json({
-    message: "Ovo vidi samo admin.",
-  });
-});
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 app.use("/api/auth", authRoutes);
 app.use("/api", projectRoutes);
